@@ -126,11 +126,24 @@ export function useAuthUser() {
     }
   };
 
+  const refreshStats = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/${clerkId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error("Error refreshing stats:", err);
+    }
+  };
+
   return {
     isSignedIn,
     user,
     isLoaded: isLoaded && !loading,
     stats,
     addXp,
+    refreshStats,
   };
 }

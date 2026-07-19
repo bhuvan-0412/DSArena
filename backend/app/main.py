@@ -8,6 +8,9 @@ from app.models.user import User, XPHistory
 from app.models.roadmap import Topic, Problem
 from app.models.progress import UserProgress, UserTopicProgress
 from app.models.achievement import Achievement, UserAchievement
+from app.models.revision import RevisionTask
+from app.models.mission import UserMission
+from app.models.activity import DailyActivity
 
 # Create the database tables on startup (as a fallback/convenience for MVP)
 # In production, we'll use Alembic migrations.

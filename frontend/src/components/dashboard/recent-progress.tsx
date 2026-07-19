@@ -1,57 +1,71 @@
 "use client";
 
-import { Calendar, CheckCircle2, RefreshCw, Flame, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuthUser } from "@/hooks/use-auth-user";
+import { Calendar, CheckCircle2, RefreshCw, Flame, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-export default function RecentProgress() {
-  // Curated premium mock data for Phase 1
-  const recentActivities = [
-    {
-      id: "act-1",
-      type: "solved",
-      title: "Two Sum",
-      topic: "Arrays & Hashing",
-      difficulty: "Easy",
-      xp: "+50 XP",
-      time: "2 hours ago",
-    },
-    {
-      id: "act-2",
-      type: "solved",
-      title: "Bubble Sort Implementation",
-      topic: "Sorting Algorithms",
-      difficulty: "Easy",
-      xp: "+50 XP",
-      time: "Yesterday",
-    },
-    {
-      id: "act-3",
-      type: "unlocked",
-      title: "Topic Conqueror",
-      topic: "Achievement Unlocked",
-      difficulty: "Badge",
-      xp: "+100 XP",
-      time: "2 days ago",
-    },
-  ];
+interface RecentActivity {
+  id: string;
+  type: string;
+  title: string;
+  topic: string;
+  difficulty: string;
+  xp: string;
+  time: string;
+}
 
-  const revisions = [
-    {
-      id: "rev-1",
-      title: "Binary Search",
-      due: "Due today",
-      problemsLeft: 3,
-      topicId: "binary-search",
-    },
-    {
-      id: "rev-2",
-      title: "Maximum Subarray (Kadane's)",
-      due: "In 2 days",
-      problemsLeft: 1,
-      topicId: "arrays",
-    },
-  ];
+interface RevisionTask {
+  id: number;
+  problem_id: string;
+  title: string;
+  topic_id: string;
+  difficulty: string;
+  stage: number;
+  scheduled_for: string;
+}
+
+const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+
+export default function RecentProgress() {
+  const { stats, isLoaded } = useAuthUser();
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [revisions, setRevisions] = useState<RevisionTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const clerkId = stats?.clerk_id || "mock_user_striver";
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    async function fetchData() {
+      try {
+        setLoading(true);
+        // 1. Fetch revisions
+        const revRes = await fetch(`${BACKEND_URL}/roadmap/revisions?clerk_id=${clerkId}`);
+        // 2. Fetch recent activity
+        const actRes = await fetch(`${BACKEND_URL}/users/${clerkId}/recent-activity`);
+        
+        if (revRes.ok) {
+          const revData = await revRes.json();
+          // Merge today and overdue revisions for dashboard display
+          setRevisions([...revData.overdue, ...revData.today]);
+        }
+        
+        if (actRes.ok) {
+          const actData = await actRes.json();
+          setRecentActivities(actData);
+        }
+      } catch (err) {
+        console.error("Error loading recent progress:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [clerkId, isLoaded]);
 
   const getDifficultyStyles = (diff: string) => {
     switch (diff.toLowerCase()) {
@@ -62,6 +76,14 @@ export default function RecentProgress() {
       default: return "bg-zinc-800 text-zinc-300 border-zinc-700";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="border border-card-border rounded-2xl p-6 glass-card flex items-center justify-center min-h-[200px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -74,33 +96,39 @@ export default function RecentProgress() {
           </h3>
         </div>
 
-        <div className="space-y-4">
-          {recentActivities.map((act) => (
-            <div
-              key={act.id}
-              className="flex justify-between items-center p-4 rounded-xl border border-card-border/50 bg-[#07070b]/40"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-white">{act.title}</span>
-                  <span className="text-xs text-muted-foreground">{act.topic}</span>
+        {recentActivities.length === 0 ? (
+          <div className="text-center text-xs text-muted-foreground py-10">
+            No recent activity recorded yet. Conquer your first arena node!
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentActivities.map((act) => (
+              <div
+                key={act.id}
+                className="flex justify-between items-center p-4 rounded-xl border border-card-border/50 bg-[#07070b]/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white">{act.title}</span>
+                    <span className="text-xs text-muted-foreground">{act.topic}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${getDifficultyStyles(act.difficulty)}`}>
+                    {act.difficulty}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-xp-gold">
+                    {act.xp}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-mono hidden md:inline">
+                    {act.time}
+                  </span>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${getDifficultyStyles(act.difficulty)}`}>
-                  {act.difficulty}
-                </span>
-                <span className="text-xs font-mono font-bold text-xp-gold">
-                  {act.xp}
-                </span>
-                <span className="text-xs text-muted-foreground font-mono hidden md:inline">
-                  {act.time}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Revisions Panel */}
@@ -112,32 +140,38 @@ export default function RecentProgress() {
           </h3>
         </div>
 
-        <div className="space-y-4">
-          {revisions.map((rev) => (
-            <div
-              key={rev.id}
-              className="p-4 rounded-xl border border-card-border/50 bg-[#07070b]/40 flex flex-col justify-between"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-sm font-bold text-white">{rev.title}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-info-cyan/10 text-info-cyan font-mono font-bold uppercase">
-                  {rev.due}
-                </span>
+        {revisions.length === 0 ? (
+          <div className="text-center text-xs text-muted-foreground py-10">
+            All clear! No pending spaced repetition revisions today.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {revisions.map((rev) => (
+              <div
+                key={rev.id}
+                className="p-4 rounded-xl border border-card-border/50 bg-[#07070b]/40 flex flex-col justify-between"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-sm font-bold text-white">{rev.title}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-info-cyan/10 text-info-cyan font-mono font-bold uppercase">
+                    Stage {rev.stage}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground text-[10px]">
+                    Spaced repetition review
+                  </span>
+                  <Link
+                    href={`/roadmap/${rev.topic_id}/${rev.problem_id}`}
+                    className="text-primary font-bold hover:underline flex items-center gap-1 group"
+                  >
+                    Review <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">
-                  {rev.problemsLeft} problems remaining
-                </span>
-                <Link
-                  href={`/roadmap/${rev.topicId}`}
-                  className="text-primary font-bold hover:underline flex items-center gap-1 group"
-                >
-                  Review <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

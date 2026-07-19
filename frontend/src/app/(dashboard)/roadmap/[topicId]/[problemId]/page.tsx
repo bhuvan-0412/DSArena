@@ -25,9 +25,15 @@ interface Problem {
   external_link?: string;
   expected_time_complexity?: string;
   expected_space_complexity?: string;
+  status?: string;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
 
 interface VictoryData {
   success: boolean;
@@ -36,13 +42,19 @@ interface VictoryData {
   current_level: number;
   current_rank: string;
   topic_completed: boolean;
+  newly_unlocked_achievements?: Achievement[];
 }
+
+const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 export default function ProblemPage({ params }: { params: Promise<{ topicId: string; problemId: string }> }) {
   const { topicId, problemId } = use(params);
-  const { stats, addXp } = useAuthUser();
+  const { stats, isLoaded, refreshStats } = useAuthUser();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Track page open time
+  const [startTime] = useState<number>(Date.now());
 
   // Editor states
   const [language, setLanguage] = useState("python");
@@ -73,13 +85,29 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
   };
 
   useEffect(() => {
+    if (!isLoaded) return;
+
     async function fetchProblem() {
       try {
         setLoading(true);
-        const res = await fetch(`${BACKEND_URL}/roadmap/problems/${problemId}`);
+        const clerkId = stats?.clerk_id || "mock_user_striver";
+        const res = await fetch(`${BACKEND_URL}/roadmap/problems/${problemId}?clerk_id=${clerkId}`);
         if (res.ok) {
           const data = await res.json();
           setProblem(data);
+          
+          // Trigger attempt status if status is NOT_STARTED
+          const currentStatus = (data.status || "NOT_STARTED").toUpperCase();
+          if (currentStatus === "NOT_STARTED") {
+            const defaultCode = getStarterTemplate(language, problemId);
+            fetch(`${BACKEND_URL}/roadmap/problems/${problemId}/attempt?clerk_id=${clerkId}&code=${encodeURIComponent(defaultCode)}&language=${language}`, {
+              method: "POST"
+            }).then(attemptRes => {
+              if (attemptRes.ok) {
+                setProblem(prev => prev ? { ...prev, status: "ATTEMPTED" } : null);
+              }
+            }).catch(err => console.error("Error setting attempt status:", err));
+          }
         } else {
           setProblem(getFallbackProblem(problemId, topicId));
         }
@@ -92,7 +120,7 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
     }
 
     fetchProblem();
-  }, [problemId, topicId]);
+  }, [problemId, topicId, isLoaded, stats?.clerk_id]);
 
   useEffect(() => {
     if (problem) {
@@ -165,9 +193,10 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
     if (!problem) return;
     setIsSubmitting(true);
     const clerkId = stats?.clerk_id || "mock_user_striver";
+    const durationSeconds = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
 
     try {
-      const res = await fetch(`${BACKEND_URL}/roadmap/problems/${problem.id}/submit?clerk_id=${clerkId}&code=${encodeURIComponent(code)}&language=${language}`, {
+      const res = await fetch(`${BACKEND_URL}/roadmap/problems/${problem.id}/submit?clerk_id=${clerkId}&code=${encodeURIComponent(code)}&language=${language}&duration_seconds=${durationSeconds}`, {
         method: "POST",
       });
 
@@ -175,30 +204,33 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
         const data = await res.json();
         setVictoryData(data);
         setShowVictoryModal(true);
-        // Add XP to local user context stats
-        addXp(problem.xp_reward, `solve_${problem.difficulty.toLowerCase()}`);
+        // Refresh local user context stats (XP bar, level, streak)
+        await refreshStats();
+        
+        // Mark problem as solved locally
+        setProblem((prev) => prev ? { ...prev, status: "SOLVED" } : null);
       } else {
-        // Fallback mock success if server fails
         setVictoryData({
           success: true,
           xp_gained: problem.xp_reward,
           current_xp: (stats?.xp || 1450) + problem.xp_reward,
           current_level: stats?.level || 2,
           current_rank: stats?.rank || "Bronze",
-          topic_completed: false
+          topic_completed: false,
+          newly_unlocked_achievements: []
         });
         setShowVictoryModal(true);
       }
     } catch (err) {
       console.error("Submission failed:", err);
-      // Local mock success on network error
       setVictoryData({
         success: true,
         xp_gained: problem.xp_reward,
         current_xp: (stats?.xp || 1450) + problem.xp_reward,
         current_level: stats?.level || 2,
         current_rank: stats?.rank || "Bronze",
-        topic_completed: false
+        topic_completed: false,
+        newly_unlocked_achievements: []
       });
       setShowVictoryModal(true);
     } finally {
@@ -233,9 +265,19 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
         <Link href={`/roadmap/${topicId}`} className="inline-flex items-center gap-2 text-xs font-mono font-bold text-muted-foreground hover:text-white uppercase tracking-wider transition-colors duration-300">
           <ArrowLeft className="w-4 h-4" /> Back to Topic Node
         </Link>
-        <span className="text-xs text-muted-foreground font-mono">
-          XP reward: <strong className="text-xp-gold">+{problem.xp_reward} XP</strong>
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-muted-foreground font-mono">
+            Status: <span className={`font-bold uppercase ${
+              (problem.status === "MASTERED" || problem.status === "Mastered") ? "text-xp-gold" : 
+              (problem.status === "SOLVED" || problem.status === "Solved") ? "text-success-emerald" : 
+              (problem.status === "REVISION_DUE" || problem.status === "Revision Due") ? "text-info-cyan animate-pulse font-extrabold" : 
+              (problem.status === "ATTEMPTED" || problem.status === "Attempted") ? "text-yellow-500" : "text-zinc-500"
+            }`}>{problem.status?.replace("_", " ") || "NOT STARTED"}</span>
+          </span>
+          <span className="text-xs text-muted-foreground font-mono">
+            XP reward: <strong className="text-xp-gold">+{problem.xp_reward} XP</strong>
+          </span>
+        </div>
       </div>
 
       {/* Main Workspace split */}
@@ -471,6 +513,32 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
                 </div>
                 <span className="text-lg font-black text-xp-gold font-mono">+{victoryData.xp_gained} XP</span>
               </div>
+
+              {/* Newly Unlocked Achievements section */}
+              {victoryData.newly_unlocked_achievements && victoryData.newly_unlocked_achievements.length > 0 && (
+                <div className="space-y-3 mt-4 border-t border-card-border/50 pt-4 text-left">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-xp-gold block flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 fill-xp-gold" /> Achievement Unlocked!
+                  </span>
+                  {victoryData.newly_unlocked_achievements.map((ach) => (
+                    <motion.div 
+                      key={ach.id} 
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-xp-gold/30 bg-xp-gold/5"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ type: "spring", stiffness: 100 }}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-xp-gold/10 text-xp-gold flex items-center justify-center border border-xp-gold/25 shrink-0 font-extrabold text-lg">
+                        🏆
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase">{ach.title}</h4>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">{ach.description}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="flex gap-4">

@@ -1,13 +1,125 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { Trophy, Award, Lock, Shield, Flame, Zap, Layers, GitFork, TrendingUp, Moon, Sun, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Trophy, Award, Lock, Shield, Flame, Zap, Layers, GitFork, TrendingUp, Moon, Sun, Loader2, Calendar, Clock, BarChart2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface AnalyticsData {
+  strengths: string[];
+  weaknesses: string[];
+  average_solving_time: string;
+  topic_completion: string;
+  revision_completion_percentage: number;
+  current_focus: string;
+  achievements_count: number;
+  achievements: { id: string; unlocked_at: string }[];
+  problems_solved: number;
+  problems_attempted: number;
+  problems_mastered: number;
+}
+
+interface TimelineData {
+  study_days: number;
+  problems_solved: number;
+  xp_earned: number;
+  longest_streak: number;
+  avg_duration_minutes: number;
+  calendar: { date: string; count: number; xp: number; duration: number }[];
+}
+
+const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 export default function ProfilePage() {
   const { stats, isLoaded } = useAuthUser();
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [timeline, setTimeline] = useState<TimelineData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!isLoaded || !stats) {
+  const clerkId = stats?.clerk_id || "mock_user_striver";
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    async function fetchProfileData() {
+      try {
+        setLoading(true);
+        const [analyticsRes, timelineRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/users/${clerkId}/learning-analytics`),
+          fetch(`${BACKEND_URL}/users/${clerkId}/timeline`),
+        ]);
+
+        if (analyticsRes.ok) {
+          const aData = await analyticsRes.json();
+          setAnalytics(aData);
+        }
+        if (timelineRes.ok) {
+          const tData = await timelineRes.json();
+          setTimeline(tData);
+        }
+      } catch (err) {
+        console.error("Error fetching profile details:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProfileData();
+  }, [clerkId, isLoaded]);
+
+  // Catalog of achievements
+  const allAchievements = [
+    { id: "first_problem", title: "First Blood", description: "Complete your first DSA problem in DSArena.", icon: Shield },
+    { id: "first_topic", title: "Topic Conqueror", description: "Master all problems within your first topic node.", icon: Trophy },
+    { id: "7_day_streak", title: "Week of Fire", description: "Maintain a login/solving streak for 7 consecutive days.", icon: Flame },
+    { id: "30_day_streak", title: "Ascended Routine", description: "Maintain a login/solving streak for 30 consecutive days.", icon: Zap },
+    { id: "100_problems", title: "Centurion", description: "Solve 100 problems on the roadmap.", icon: Award },
+    { id: "array_master", title: "Array Commander", description: "Complete all Arrays and Hashing nodes.", icon: Layers },
+    { id: "graph_explorer", title: "Graph Cartographer", description: "Complete the Graph and Trees nodes.", icon: GitFork },
+    { id: "dp_survivor", title: "DP Overlord", description: "Successfully conquer the Dynamic Programming nodes.", icon: TrendingUp },
+    { id: "night_owl", title: "Night Owl", description: "Submit a correct solution between 12:00 AM and 4:00 AM.", icon: Moon },
+    { id: "early_bird", title: "Early Bird", description: "Submit a correct solution between 5:00 AM and 8:00 AM.", icon: Sun },
+  ];
+
+  // Helper to check if unlocked
+  const getAchievementUnlockTime = (id: string) => {
+    if (!analytics) return null;
+    const match = analytics.achievements.find((a) => a.id === id);
+    return match ? match.unlocked_at : null;
+  };
+
+  // Helper to generate calendar contribution cells for last 365 days
+  const getTimelineCells = () => {
+    if (!timeline) return [];
+    
+    // We generate 53 weeks x 7 days
+    const cells = [];
+    const now = new Date();
+    // Start from 364 days ago
+    for (let i = 370; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      
+      const activity = timeline.calendar.find((c) => c.date === dateStr);
+      cells.push({
+        date: dateStr,
+        count: activity ? activity.count : 0,
+        xp: activity ? activity.xp : 0,
+      });
+    }
+    return cells;
+  };
+
+  const getShadingColor = (count: number, xp: number) => {
+    if (xp === 0) return "bg-zinc-950/80 border-card-border/20";
+    if (count === 0 && xp > 0) return "bg-success-emerald/10 border-success-emerald/10";
+    if (count === 1) return "bg-success-emerald/30 border-success-emerald/20";
+    if (count === 2) return "bg-success-emerald/65 border-success-emerald/40 shadow-[0_0_6px_rgba(16,185,129,0.15)]";
+    return "bg-success-emerald border-success-emerald/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]";
+  };
+
+  if (!isLoaded || loading || !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -16,21 +128,8 @@ export default function ProfilePage() {
     );
   }
 
-  // Catalog of achievements mapping icons
-  const achievementsList = [
-    { id: "first_problem", title: "First Blood", description: "Complete your first DSA problem in DSArena.", icon: Shield, unlocked: true },
-    { id: "first_topic", title: "Topic Conqueror", description: "Master all problems within your first topic node.", icon: Trophy, unlocked: true },
-    { id: "7_day_streak", title: "Week of Fire", description: "Maintain a login/solving streak for 7 consecutive days.", icon: Flame, unlocked: false },
-    { id: "30_day_streak", title: "Ascended Routine", description: "Maintain a login/solving streak for 30 consecutive days.", icon: Zap, unlocked: false },
-    { id: "100_problems", title: "Centurion", description: "Solve 100 problems on the roadmap.", icon: Award, unlocked: false },
-    { id: "array_master", title: "Array Commander", description: "Complete all Arrays and Hashing nodes.", icon: Layers, unlocked: false },
-    { id: "graph_explorer", title: "Graph Cartographer", description: "Complete the Graph and Trees nodes.", icon: GitFork, unlocked: false },
-    { id: "dp_survivor", title: "DP Overlord", description: "Successfully conquer the Dynamic Programming nodes.", icon: TrendingUp, unlocked: false },
-    { id: "night_owl", title: "Night Owl", description: "Submit a correct solution between 12:00 AM and 4:00 AM.", icon: Moon, unlocked: true },
-    { id: "early_bird", title: "Early Bird", description: "Submit a correct solution between 5:00 AM and 8:00 AM.", icon: Sun, unlocked: false },
-  ];
-
-  const unlockedCount = achievementsList.filter((a) => a.unlocked).length;
+  const cells = getTimelineCells();
+  const unlockedCount = allAchievements.filter((a) => !!getAchievementUnlockTime(a.id)).length;
 
   return (
     <div className="space-y-10 pb-16">
@@ -71,6 +170,157 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
+      {/* Problem Statuses Grid */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="border border-card-border rounded-2xl p-5 bg-[#0a0a0f] flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-1">Problems Solved</span>
+              <span className="text-2xl font-black text-success-emerald font-mono">{analytics.problems_solved}</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-success-emerald/10 text-success-emerald flex items-center justify-center border border-success-emerald/20 font-bold text-lg">🟢</div>
+          </div>
+          <div className="border border-card-border rounded-2xl p-5 bg-[#0a0a0f] flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-1">Problems Attempted</span>
+              <span className="text-2xl font-black text-yellow-500 font-mono">{analytics.problems_attempted}</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center border border-yellow-500/20 font-bold text-lg">🟡</div>
+          </div>
+          <div className="border border-card-border rounded-2xl p-5 bg-[#0a0a0f] flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-1">Problems Mastered</span>
+              <span className="text-2xl font-black text-purple-500 font-mono">{analytics.problems_mastered}</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center border border-purple-500/20 font-bold text-lg">🟣</div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Grid */}
+      {analytics && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Key metrics list */}
+          <div className="border border-card-border rounded-2xl p-6 glass-card space-y-4">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
+              <BarChart2 className="w-4 h-4 text-primary" /> Learning Analytics
+            </h3>
+            
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
+                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Average Solving Time</span>
+                <span className="text-white font-bold font-mono">{analytics.average_solving_time}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
+                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Topic Nodes Completed</span>
+                <span className="text-white font-bold font-mono">{analytics.topic_completion}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
+                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Revision Completion</span>
+                <span className="text-info-cyan font-bold font-mono">{analytics.revision_completion_percentage}%</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest font-mono">Current Focus</span>
+                <span className="text-xp-gold font-bold">{analytics.current_focus}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Strengths Card */}
+          <div className="border border-card-border rounded-2xl p-6 bg-[#041e17]/10 border-success-emerald/10 space-y-3">
+            <h3 className="text-sm font-bold text-success-emerald uppercase tracking-wider flex items-center gap-2">
+              <Zap className="w-4 h-4" /> Gladiator Strengths
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Highest mastery topics based on problem completeness and revision recall scores:
+            </p>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {analytics.strengths.map((str) => (
+                <span key={str} className="text-[10px] font-bold px-2.5 py-1 rounded bg-success-emerald/10 text-success-emerald border border-success-emerald/20 uppercase font-mono">
+                  {str}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Weaknesses Card */}
+          <div className="border border-card-border rounded-2xl p-6 bg-red-950/5 border-red-500/10 space-y-3">
+            <h3 className="text-sm font-bold text-red-500 uppercase tracking-wider flex items-center gap-2">
+              <Shield className="w-4 h-4" /> Focus Areas (Weaknesses)
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Topics requiring immediate reviews or problems currently left attempted but unsolved:
+            </p>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {analytics.weaknesses.map((weak) => (
+                <span key={weak} className="text-[10px] font-bold px-2.5 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20 uppercase font-mono">
+                  {weak}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub Style Learning Timeline */}
+      {timeline && (
+        <div className="border border-card-border rounded-3xl p-6 glass-card space-y-6">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-white uppercase tracking-wider">
+                Gladiator Timeline
+              </h2>
+            </div>
+            
+            {/* Summary statistics row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div className="px-3 py-1.5 rounded-lg border border-card-border bg-[#030303]/40">
+                <span className="text-muted-foreground block text-[9px] uppercase tracking-widest mb-0.5">Study Days</span>
+                <span className="text-white font-bold font-mono">{timeline.study_days} days</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg border border-card-border bg-[#030303]/40">
+                <span className="text-muted-foreground block text-[9px] uppercase tracking-widest mb-0.5">Solved</span>
+                <span className="text-success-emerald font-bold font-mono">{timeline.problems_solved} nodes</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg border border-card-border bg-[#030303]/40">
+                <span className="text-muted-foreground block text-[9px] uppercase tracking-widest mb-0.5">Max Streak</span>
+                <span className="text-orange-500 font-bold font-mono">{timeline.longest_streak} days</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg border border-card-border bg-[#030303]/40">
+                <span className="text-muted-foreground block text-[9px] uppercase tracking-widest mb-0.5">Avg Session</span>
+                <span className="text-info-cyan font-bold font-mono">{timeline.avg_duration_minutes} mins</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid wrapper */}
+          <div className="relative border border-card-border bg-[#030303]/40 p-4 rounded-2xl overflow-x-auto">
+            {/* The contribution cells grid */}
+            <div className="grid grid-flow-col grid-rows-7 gap-1 min-w-[700px]">
+              {cells.map((cell, idx) => (
+                <div 
+                  key={idx}
+                  className={`w-3.5 h-3.5 rounded-[2px] border ${getShadingColor(cell.count, cell.xp)}`}
+                  title={`${cell.date}: ${cell.count} solved, +${cell.xp} XP`}
+                />
+              ))}
+            </div>
+            
+            {/* Legend */}
+            <div className="flex justify-end items-center gap-1.5 text-[9px] text-muted-foreground mt-4 uppercase font-bold tracking-widest">
+              <span>Less</span>
+              <div className="w-3 h-3 rounded-[2px] border bg-zinc-950/80 border-card-border/20" />
+              <div className="w-3 h-3 rounded-[2px] border bg-success-emerald/10 border-success-emerald/10" />
+              <div className="w-3 h-3 rounded-[2px] border bg-success-emerald/30 border-success-emerald/20" />
+              <div className="w-3 h-3 rounded-[2px] border bg-success-emerald/65 border-success-emerald/40" />
+              <div className="w-3 h-3 rounded-[2px] border bg-success-emerald border-success-emerald/60" />
+              <span>More</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Achievements Section */}
       <div>
         <div className="flex justify-between items-center mb-6">
@@ -81,19 +331,22 @@ export default function ProfilePage() {
             </h2>
           </div>
           <span className="text-xs font-mono font-bold px-2 py-1 rounded bg-muted text-muted-foreground border border-card-border">
-            {unlockedCount} / {achievementsList.length} UNLOCKED
+            {unlockedCount} / {allAchievements.length} UNLOCKED
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {achievementsList.map((ach, idx) => {
+          {allAchievements.map((ach, idx) => {
             const Icon = ach.icon;
+            const unlockTime = getAchievementUnlockTime(ach.id);
+            const isUnlocked = !!unlockTime;
+            
             return (
               <motion.div
                 key={ach.id}
                 className={`border rounded-2xl p-5 relative overflow-hidden transition-all duration-300 ${
-                  ach.unlocked
-                    ? "glass-card border-xp-gold/30 hover:border-xp-gold/60"
+                  isUnlocked
+                    ? "glass-card border-xp-gold/30 hover:border-xp-gold/60 shadow-lg shadow-xp-gold/[0.02]"
                     : "bg-[#050508]/30 border-card-border/40 opacity-50"
                 }`}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -101,26 +354,41 @@ export default function ProfilePage() {
                 transition={{ delay: idx * 0.05 }}
               >
                 {/* Visual Glow for Unlocked Badges */}
-                {ach.unlocked && (
+                {isUnlocked && (
                   <div className="absolute top-0 right-0 w-24 h-24 bg-xp-gold/5 rounded-full blur-2xl pointer-events-none" />
                 )}
 
                 <div className="flex items-start gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                    ach.unlocked
+                    isUnlocked
                       ? "bg-xp-gold/10 text-xp-gold border-xp-gold/20"
                       : "bg-zinc-950 text-zinc-600 border-zinc-900"
                   }`}>
-                    {ach.unlocked ? <Icon className="w-6 h-6" /> : <Lock className="w-5 h-5" />}
+                    {isUnlocked ? (
+                      <motion.div
+                        initial={{ rotate: -10, scale: 0.8 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        transition={{ delay: idx * 0.06, type: "spring" }}
+                      >
+                        <Icon className="w-6 h-6 animate-pulse" />
+                      </motion.div>
+                    ) : (
+                      <Lock className="w-5 h-5" />
+                    )}
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className={`font-bold text-sm ${ach.unlocked ? "text-white" : "text-zinc-500"}`}>
+                    <h3 className={`font-bold text-sm ${isUnlocked ? "text-white" : "text-zinc-500"}`}>
                       {ach.title}
                     </h3>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {ach.description}
                     </p>
+                    {unlockTime && (
+                      <span className="text-[9px] text-muted-foreground font-mono block pt-1 uppercase">
+                        Unlocked {new Date(unlockTime).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.div>

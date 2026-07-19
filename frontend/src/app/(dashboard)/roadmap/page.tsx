@@ -11,6 +11,7 @@ interface Problem {
   title: string;
   difficulty: string;
   xp_reward: number;
+  status?: string;
 }
 
 interface Topic {
@@ -20,9 +21,59 @@ interface Topic {
   order: number;
   xp_reward: number;
   problems: Problem[];
+  problems_solved?: number;
+  quiz_completed?: boolean;
+  video_watched?: boolean;
+  notes_read?: boolean;
+  boss_battle_completed?: boolean;
+  boss_battle_locked?: boolean;
+  mastery_percentage?: number;
+  estimated_completion?: string;
 }
 
 const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+
+export const getStatusBadge = (status?: string) => {
+  const normalized = (status || "NOT_STARTED").toUpperCase();
+  switch (normalized) {
+    case "NOT_STARTED":
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 uppercase font-mono bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900">
+          <span className="w-1.5 h-1.5 rounded-full border border-zinc-500" /> Not Started
+        </span>
+      );
+    case "ATTEMPTED":
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-yellow-500 uppercase font-mono bg-yellow-500/5 px-2 py-0.5 rounded border border-yellow-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_4px_#eab308]" /> Attempted
+        </span>
+      );
+    case "SOLVED":
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-success-emerald uppercase font-mono bg-success-emerald/5 px-2 py-0.5 rounded border border-success-emerald/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-success-emerald shadow-[0_0_4px_#10b981]" /> Solved
+        </span>
+      );
+    case "MASTERED":
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-purple-400 uppercase font-mono bg-purple-500/5 px-2 py-0.5 rounded border border-purple-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_4px_#c084fc]" /> Mastered
+        </span>
+      );
+    case "REVISION_DUE":
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-red-500 uppercase font-mono bg-red-500/5 px-2 py-0.5 rounded border border-red-500/20 animate-pulse">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]" /> Revision Due
+        </span>
+      );
+    default:
+      return (
+        <span className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 uppercase font-mono bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900">
+          <span className="w-1.5 h-1.5 rounded-full border border-zinc-500" /> Not Started
+        </span>
+      );
+  }
+};
 
 export default function RoadmapPage() {
   const { stats, isLoaded } = useAuthUser();
@@ -30,10 +81,13 @@ export default function RoadmapPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isLoaded) return;
+    
     async function fetchRoadmap() {
       try {
         setLoading(true);
-        const res = await fetch(`${BACKEND_URL}/roadmap/topics`);
+        const clerkId = stats?.clerk_id || "mock_user_striver";
+        const res = await fetch(`${BACKEND_URL}/roadmap/topics?clerk_id=${clerkId}`);
         if (res.ok) {
           const data = await res.json();
           setTopics(data);
@@ -49,7 +103,7 @@ export default function RoadmapPage() {
     }
 
     fetchRoadmap();
-  }, []);
+  }, [isLoaded, stats?.clerk_id]);
 
   const getFallbackTopics = (): Topic[] => [
     {
@@ -63,6 +117,8 @@ export default function RoadmapPage() {
         { id: "valid-anagram", title: "Valid Anagram", difficulty: "Easy", xp_reward: 50 },
         { id: "max-subarray", title: "Maximum Subarray (Kadane's)", difficulty: "Medium", xp_reward: 100 },
       ],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
     {
       id: "sorting",
@@ -74,6 +130,8 @@ export default function RoadmapPage() {
         { id: "bubble-sort", title: "Bubble Sort Implementation", difficulty: "Easy", xp_reward: 50 },
         { id: "quick-sort", title: "Quick Sort Implementation", difficulty: "Medium", xp_reward: 100 },
       ],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
     {
       id: "binary-search",
@@ -84,6 +142,8 @@ export default function RoadmapPage() {
       problems: [
         { id: "binary-search-problem", title: "Binary Search", difficulty: "Easy", xp_reward: 50 },
       ],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
     {
       id: "recursion",
@@ -92,6 +152,8 @@ export default function RoadmapPage() {
       order: 4,
       xp_reward: 200,
       problems: [],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
     {
       id: "linked-list",
@@ -100,6 +162,8 @@ export default function RoadmapPage() {
       order: 5,
       xp_reward: 200,
       problems: [],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
     {
       id: "trees",
@@ -108,10 +172,12 @@ export default function RoadmapPage() {
       order: 6,
       xp_reward: 200,
       problems: [],
+      problems_solved: 0,
+      mastery_percentage: 0
     },
   ];
 
-  if (loading) {
+  if (!isLoaded || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -119,13 +185,6 @@ export default function RoadmapPage() {
       </div>
     );
   }
-
-  // Get problem count solved by user (mocked based on topic index for visual purposes)
-  const getSolvedCount = (topicId: string) => {
-    if (topicId === "arrays") return 2; // Two sum & bubble sort completed in mock logs
-    if (topicId === "sorting") return 1;
-    return 0;
-  };
 
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
@@ -158,10 +217,15 @@ export default function RoadmapPage() {
         <div className="absolute top-10 bottom-10 w-1 bg-gradient-to-b from-primary via-info-cyan to-muted z-0 pointer-events-none" />
 
         {topics.map((topic, idx) => {
-          const solved = getSolvedCount(topic.id);
+          const solved = topic.problems_solved || 0;
           const total = topic.problems.length;
-          const isCompleted = total > 0 && solved === total;
-          const isLocked = idx > 2; // Lock recursion, linked lists, trees for MVP visual demo
+          const mastery = topic.mastery_percentage || 0;
+          const isCompleted = mastery === 100;
+          
+          // Lock node if previous topic is not completed (i.e. solved < total)
+          const isLocked = idx > 0 && topics[idx - 1] && (
+            (topics[idx - 1].problems.length > 0 && (topics[idx - 1].problems_solved || 0) < topics[idx - 1].problems.length)
+          );
 
           return (
             <motion.div
@@ -194,6 +258,11 @@ export default function RoadmapPage() {
                     <span className="text-xs text-muted-foreground">
                       {total > 0 ? `${solved} / ${total} Solved` : "0 problems"}
                     </span>
+                    {!isLocked && (
+                      <span className="text-[10px] text-info-cyan font-mono block mt-1 font-bold">
+                        Est: {topic.estimated_completion}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -208,6 +277,22 @@ export default function RoadmapPage() {
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {topic.description}
                   </p>
+                  
+                  {/* Topic Mastery Progress Bar */}
+                  {!isLocked && (
+                    <div className="mt-3 space-y-1">
+                      <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                        <span>PROBLEMS SOLVED</span>
+                        <span className="text-xp-gold font-bold">{solved} / {total}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-zinc-950 border border-card-border/50 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-xp-gold to-yellow-500" 
+                          style={{ width: `${total > 0 ? (solved / total) * 100 : 0}%` }} 
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Problems Previews inside Node */}
@@ -216,7 +301,8 @@ export default function RoadmapPage() {
                     <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">Problem Workspace:</span>
                     <div className="grid grid-cols-1 gap-2">
                       {topic.problems.map((p) => {
-                        const problemSolved = topic.id === "arrays" ? (p.id !== "max-subarray") : (p.id === "bubble-sort");
+                        const normalizedStatus = (p.status || "NOT_STARTED").toUpperCase();
+                        const problemSolved = normalizedStatus === "SOLVED" || normalizedStatus === "MASTERED" || normalizedStatus === "REVISION_DUE" || p.status === "Solved" || p.status === "Mastered" || p.status === "Revision Due";
                         return (
                           <div 
                             key={p.id} 
@@ -226,6 +312,7 @@ export default function RoadmapPage() {
                               {p.title}
                             </span>
                             <div className="flex items-center gap-2">
+                              {getStatusBadge(p.status)}
                               <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(p.difficulty)}`}>
                                 {p.difficulty}
                               </span>

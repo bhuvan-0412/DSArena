@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Any
+from datetime import datetime
 
 # Problems
 class ProblemBase(BaseModel):
@@ -20,6 +21,8 @@ class ProblemCreate(ProblemBase):
 
 class ProblemResponse(ProblemBase):
     topic_id: str
+    status: Optional[str] = "NOT_STARTED"
+    revision_due_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -37,6 +40,14 @@ class TopicCreate(TopicBase):
 
 class TopicResponse(TopicBase):
     problems: List[ProblemResponse] = []
+    problems_solved: Optional[int] = 0
+    quiz_completed: Optional[bool] = False
+    video_watched: Optional[bool] = False
+    notes_read: Optional[bool] = False
+    boss_battle_completed: Optional[bool] = False
+    boss_battle_locked: Optional[bool] = True
+    mastery_percentage: Optional[int] = 0
+    estimated_completion: Optional[str] = "0 mins"
 
     class Config:
         from_attributes = True

@@ -135,7 +135,7 @@ export default function MissionCard() {
                       mission.completed ? "text-success-emerald line-through" : "text-white"
                     }`}
                   >
-                    {mission.title}
+                    {mission.title} {mission.target > 1 && `(${mission.progress}/${mission.target})`}
                   </h4>
                   <span className="text-xs font-mono font-extrabold text-xp-gold">
                     +{mission.xp_reward} XP
