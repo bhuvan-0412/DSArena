@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  /* Dark theme first / default */
+  --background: #030303;
+  --foreground: #f8fafc;
+  
+  --card: #0a0a0f;
+  --card-foreground: #f8fafc;
+  --card-border: #1f1f2e;
+  
+  --popover: #0a0a0f;
+  --popover-foreground: #f8fafc;
+  
+  --primary: #ff4655; /* Valorant Red */
+  --primary-foreground: #ffffff;
+  
+  --secondary: #12121f;
+  --secondary-foreground: #f8fafc;
+  
+  --muted: #1e1e2f;
+  --muted-foreground: #94a3b8;
+  
+  --accent: #ff4655;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --border: #1e1e2f;
+  --input: #1e1e2f;
+  --ring: #ff4655;
+  
+  /* Gamification Specifics */
+  --xp-gold: #eab308;
+  --success-emerald: #10b981;
+  --info-cyan: #06b6d4;
+  
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  --color-xp-gold: var(--xp-gold);
+  --color-success-emerald: var(--success-emerald);
+  --color-info-cyan: var(--info-cyan);
+  
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+/* Premium Layout Utilities */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(255, 70, 85, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.03) 0px, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.003) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.003) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Glowing Border Animation effect */
+@keyframes border-glow {
+  0%, 100% {
+    border-color: var(--card-border);
+    box-shadow: 0 0 0 rgba(255, 46, 85, 0);
+  }
+  50% {
+    border-color: rgba(255, 70, 85, 0.4);
+    box-shadow: 0 0 15px rgba(255, 70, 85, 0.1);
+  }
+}
+
+.animate-glow {
+  animation: border-glow 3s infinite ease-in-out;
+}
+
+/* Glassmorphism card utility */
+.glass-card {
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030303;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e1e2f;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Valorant-style Title Accent */
+.valorant-title {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fff 30%, #ff4655 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
