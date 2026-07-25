@@ -32,14 +32,18 @@ class UserProgress(Base):
         UniqueConstraint("user_id", "problem_id", name="uq_user_problem"),
     )
 
-class UserTopicProgress(Base):
-    __tablename__ = "user_topic_progress"
+class UserNodeProgress(Base):
+    __tablename__ = "user_node_progress"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    topic_id = Column(String, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    node_id = Column(String, ForeignKey("roadmap_nodes.id", ondelete="CASCADE"), nullable=False)
     completed = Column(Boolean, default=False)
     completed_at = Column(DateTime, nullable=True)
+    
+    # Statistics
+    progress_percentage = Column(Integer, default=0)
+    problems_solved = Column(Integer, default=0)
     
     # Progress flags for topic items
     video_watched = Column(Boolean, default=False)
@@ -48,9 +52,9 @@ class UserTopicProgress(Base):
     boss_battle_completed = Column(Boolean, default=False)
 
     # Relationships
-    user = relationship("User", back_populates="topic_progress")
-    topic = relationship("Topic", back_populates="user_topic_progress")
+    user = relationship("User", back_populates="node_progress")
+    node = relationship("RoadmapNode", back_populates="user_node_progress")
 
     __table_args__ = (
-        UniqueConstraint("user_id", "topic_id", name="uq_user_topic"),
+        UniqueConstraint("user_id", "node_id", name="uq_user_node"),
     )

@@ -2,9 +2,10 @@
 
 import { useEffect, useState, use } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { ArrowLeft, Play, Sparkles, CheckCircle2, Award, Zap, HelpCircle, Code2, AlertTriangle, MessageSquare, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Sparkles, CheckCircle2, Award, Zap, HelpCircle, Code2, AlertTriangle, MessageSquare, BookOpen, Loader2, Bot } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { AIMentorDrawer } from "@/components/ai/ai-mentor-drawer";
 
 interface Example {
   input: string;
@@ -63,6 +64,7 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [victoryData, setVictoryData] = useState<VictoryData | null>(null);
   const [revealedHintIdx, setRevealedHintIdx] = useState<number | null>(null);
+  const [isAiOpen, setIsAiOpen] = useState(false);
 
   // Active tab in details pane (Description, Editorial, Discussion)
   const [activeTab, setActiveTab] = useState<"description" | "editorial" | "discussion">("description");
@@ -456,6 +458,13 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
 
           {/* Action runner buttons */}
           <div className="p-4 border-t border-card-border bg-[#030303]/80 flex justify-end gap-3 shrink-0">
+            <button
+              onClick={() => setIsAiOpen(true)}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-rose-600/20"
+            >
+              <Bot className="w-4 h-4" />
+              <span>Ask AI Coach</span>
+            </button>
             <button 
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -477,6 +486,15 @@ export default function ProblemPage({ params }: { params: Promise<{ topicId: str
         </div>
 
       </div>
+
+      <AIMentorDrawer
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+        topicId={topicId}
+        problemId={problemId}
+        codeSnippet={code}
+        language={language}
+      />
 
       {/* Victory Pop Up Modal */}
       <AnimatePresence>

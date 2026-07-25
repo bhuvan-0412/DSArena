@@ -19,12 +19,13 @@ if config.config_file_name is not None:
 from app.core.database import Base
 from app.core.config import settings
 from app.models.user import User, XPHistory
-from app.models.roadmap import Topic, Problem
-from app.models.progress import UserProgress, UserTopicProgress
+from app.models.roadmap import RoadmapNode, Problem
+from app.models.progress import UserProgress, UserNodeProgress
 from app.models.achievement import Achievement, UserAchievement
 from app.models.revision import RevisionTask
 from app.models.mission import UserMission
 from app.models.activity import DailyActivity
+from app.models.quiz import Quiz, QuizQuestion, UserQuizAttempt
 
 target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

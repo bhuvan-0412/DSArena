@@ -141,6 +141,7 @@ export function useAuthUser() {
   return {
     isSignedIn,
     user,
+    clerkId,
     isLoaded: isLoaded && !loading,
     stats,
     addXp,

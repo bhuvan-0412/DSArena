@@ -1,15 +1,20 @@
 "use client";
 
+import React, { useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import StatsGrid from "@/components/dashboard/stats-grid";
 import MissionCard from "@/components/dashboard/mission-card";
 import RecentProgress from "@/components/dashboard/recent-progress";
+import { DailyAdaptivePlanCard } from "@/components/adaptive/daily-adaptive-plan-card";
+import { AdaptiveRecommendationsCard } from "@/components/adaptive/adaptive-recommendations-card";
+import { FocusModeModal } from "@/components/adaptive/focus-mode-modal";
 import { ArrowRight, Sparkles, Sword, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const { stats, user, isLoaded } = useAuthUser();
+  const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
 
   if (!isLoaded || !stats) {
     return (
@@ -62,6 +67,12 @@ export default function DashboardPage() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Adaptive Learning Engine: Today's Personalized Plan */}
+      <DailyAdaptivePlanCard onOpenFocusMode={() => setIsFocusModeOpen(true)} />
+
+      {/* Adaptive Learning Engine: Recommendations */}
+      <AdaptiveRecommendationsCard />
 
       {/* Stats Grid */}
       <StatsGrid />
@@ -121,6 +132,9 @@ export default function DashboardPage() {
 
       {/* Recent Progress */}
       <RecentProgress />
+
+      {/* Focus Mode Overlay Modal */}
+      <FocusModeModal isOpen={isFocusModeOpen} onClose={() => setIsFocusModeOpen(false)} />
     </div>
   );
 }

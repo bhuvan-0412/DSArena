@@ -27,9 +27,16 @@ class User(Base):
 
     # Relationships
     progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
-    topic_progress = relationship("UserTopicProgress", back_populates="user", cascade="all, delete-orphan")
+    node_progress = relationship("UserNodeProgress", back_populates="user", cascade="all, delete-orphan")
     achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
     xp_history = relationship("XPHistory", back_populates="user", cascade="all, delete-orphan")
+    quiz_attempts = relationship("UserQuizAttempt", back_populates="user", cascade="all, delete-orphan")
+    ai_settings = relationship("AISettings", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    preferences = relationship("UserPreferences", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    daily_study_plans = relationship("DailyStudyPlan", back_populates="user", cascade="all, delete-orphan")
+    recommendations = relationship("LearningRecommendation", back_populates="user", cascade="all, delete-orphan")
+    insights = relationship("LearningInsight", back_populates="user", cascade="all, delete-orphan")
 
 class XPHistory(Base):
     __tablename__ = "xp_history"

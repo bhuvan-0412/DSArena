@@ -2,83 +2,57 @@
 
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { Award, Compass, Play, CheckCircle2, ChevronRight, Lock, BookOpen, Loader2 } from "lucide-react";
+import { 
+  Award, 
+  Compass, 
+  Play, 
+  CheckCircle2, 
+  ChevronRight, 
+  ChevronDown, 
+  Lock, 
+  BookOpen, 
+  Loader2, 
+  Clock, 
+  ShieldAlert, 
+  Zap, 
+  FileQuestion,
+  TrendingUp,
+  AlertCircle
+} from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface Problem {
+interface RoadmapNode {
   id: string;
+  parent_id?: string;
   title: string;
-  difficulty: string;
+  slug: string;
+  description?: string;
+  type: string;  // 'step', 'section', 'subsection', 'topic', 'problem'
+  order_index: number;
+  estimated_time?: number;
   xp_reward: number;
-  status?: string;
-}
-
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  order: number;
-  xp_reward: number;
-  problems: Problem[];
-  problems_solved?: number;
-  quiz_completed?: boolean;
-  video_watched?: boolean;
-  notes_read?: boolean;
-  boss_battle_completed?: boolean;
-  boss_battle_locked?: boolean;
-  mastery_percentage?: number;
-  estimated_completion?: string;
+  difficulty?: string;
+  
+  is_completed: boolean;
+  is_locked: boolean;
+  progress_percentage: number;
+  problems_solved: number;
+  total_problems: number;
+  quiz_completed: boolean;
+  quiz_best_score?: number;
+  revision_due_count: number;
+  
+  children: RoadmapNode[];
 }
 
 const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
-export const getStatusBadge = (status?: string) => {
-  const normalized = (status || "NOT_STARTED").toUpperCase();
-  switch (normalized) {
-    case "NOT_STARTED":
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 uppercase font-mono bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900">
-          <span className="w-1.5 h-1.5 rounded-full border border-zinc-500" /> Not Started
-        </span>
-      );
-    case "ATTEMPTED":
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-yellow-500 uppercase font-mono bg-yellow-500/5 px-2 py-0.5 rounded border border-yellow-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_4px_#eab308]" /> Attempted
-        </span>
-      );
-    case "SOLVED":
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-success-emerald uppercase font-mono bg-success-emerald/5 px-2 py-0.5 rounded border border-success-emerald/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-success-emerald shadow-[0_0_4px_#10b981]" /> Solved
-        </span>
-      );
-    case "MASTERED":
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-purple-400 uppercase font-mono bg-purple-500/5 px-2 py-0.5 rounded border border-purple-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_4px_#c084fc]" /> Mastered
-        </span>
-      );
-    case "REVISION_DUE":
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-red-500 uppercase font-mono bg-red-500/5 px-2 py-0.5 rounded border border-red-500/20 animate-pulse">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]" /> Revision Due
-        </span>
-      );
-    default:
-      return (
-        <span className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 uppercase font-mono bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900">
-          <span className="w-1.5 h-1.5 rounded-full border border-zinc-500" /> Not Started
-        </span>
-      );
-  }
-};
-
 export default function RoadmapPage() {
   const { stats, isLoaded } = useAuthUser();
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const [nodes, setNodes] = useState<RoadmapNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -87,16 +61,17 @@ export default function RoadmapPage() {
       try {
         setLoading(true);
         const clerkId = stats?.clerk_id || "mock_user_striver";
-        const res = await fetch(`${BACKEND_URL}/roadmap/topics?clerk_id=${clerkId}`);
+        const res = await fetch(`${BACKEND_URL}/roadmap/nodes?clerk_id=${clerkId}`);
         if (res.ok) {
           const data = await res.json();
-          setTopics(data);
-        } else {
-          setTopics(getFallbackTopics());
+          setNodes(data);
+          
+          // Auto-expand the active path (up to the first incomplete node)
+          const autoExpanded = getAutoExpandedNodes(data);
+          setExpandedNodes(autoExpanded);
         }
       } catch (err) {
-        console.error("Error fetching roadmap:", err);
-        setTopics(getFallbackTopics());
+        console.error("Error fetching roadmap tree:", err);
       } finally {
         setLoading(false);
       }
@@ -105,93 +80,63 @@ export default function RoadmapPage() {
     fetchRoadmap();
   }, [isLoaded, stats?.clerk_id]);
 
-  const getFallbackTopics = (): Topic[] => [
-    {
-      id: "arrays",
-      title: "Arrays & Hashing",
-      description: "Master array operations, two pointer techniques, and hash map searches.",
-      order: 1,
-      xp_reward: 200,
-      problems: [
-        { id: "two-sum", title: "Two Sum", difficulty: "Easy", xp_reward: 50 },
-        { id: "valid-anagram", title: "Valid Anagram", difficulty: "Easy", xp_reward: 50 },
-        { id: "max-subarray", title: "Maximum Subarray (Kadane's)", difficulty: "Medium", xp_reward: 100 },
-      ],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-    {
-      id: "sorting",
-      title: "Sorting Algorithms",
-      description: "Understand sorting logic: bubble, selection, insertion, merge, and quicksort.",
-      order: 2,
-      xp_reward: 200,
-      problems: [
-        { id: "bubble-sort", title: "Bubble Sort Implementation", difficulty: "Easy", xp_reward: 50 },
-        { id: "quick-sort", title: "Quick Sort Implementation", difficulty: "Medium", xp_reward: 100 },
-      ],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-    {
-      id: "binary-search",
-      title: "Binary Search",
-      description: "Solve logarithmic search challenges on arrays and virtual search spaces.",
-      order: 3,
-      xp_reward: 200,
-      problems: [
-        { id: "binary-search-problem", title: "Binary Search", difficulty: "Easy", xp_reward: 50 },
-      ],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-    {
-      id: "recursion",
-      title: "Recursion & Backtracking",
-      description: "Learn divide-and-conquer, backtracking, and recursive trees.",
-      order: 4,
-      xp_reward: 200,
-      problems: [],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-    {
-      id: "linked-list",
-      title: "Linked Lists",
-      description: "Implement singly and doubly linked list pointer manipulations.",
-      order: 5,
-      xp_reward: 200,
-      problems: [],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-    {
-      id: "trees",
-      title: "Binary Trees & BST",
-      description: "Traverse and manipulate hierarchical trees, binary search trees.",
-      order: 6,
-      xp_reward: 200,
-      problems: [],
-      problems_solved: 0,
-      mastery_percentage: 0
-    },
-  ];
+  const getAutoExpandedNodes = (nodeList: RoadmapNode[]): Record<string, boolean> => {
+    const expanded: Record<string, boolean> = {};
+    
+    const traverse = (list: RoadmapNode[]): boolean => {
+      for (const node of list) {
+        // Expand steps by default
+        if (node.type === "step") {
+          expanded[node.id] = true;
+        }
+
+        if (!node.is_completed) {
+          // Expand the first incomplete topic and its ancestors
+          expanded[node.id] = true;
+          if (node.parent_id) {
+            expanded[node.parent_id] = true;
+          }
+          return true;
+        }
+
+        if (node.children && node.children.length > 0) {
+          const found = traverse(node.children);
+          if (found) {
+            expanded[node.id] = true;
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    
+    traverse(nodeList);
+    return expanded;
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   if (!isLoaded || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground font-mono">RETRIEVING ROADMAP NODES...</p>
+        <p className="text-sm text-muted-foreground font-mono">RETRIEVING learning paths...</p>
       </div>
     );
   }
 
-  const getDifficultyColor = (diff: string) => {
+  const getDifficultyColor = (diff?: string) => {
+    if (!diff) return "text-zinc-400 bg-zinc-900 border-zinc-800";
     switch (diff.toLowerCase()) {
       case "easy": return "text-success-emerald bg-success-emerald/10 border-success-emerald/20";
       case "medium": return "text-yellow-500 bg-yellow-500/10 border-yellow-500/20";
       case "hard": return "text-primary bg-primary/10 border-primary/20";
-      default: return "text-muted-foreground bg-muted";
+      default: return "text-zinc-400 bg-zinc-900 border-zinc-800";
     }
   };
 
@@ -201,152 +146,235 @@ export default function RoadmapPage() {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Compass className="w-5 h-5 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Progress Roadmap</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Learning Roadmap</span>
         </div>
         <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 uppercase">
-          Striver A2Z roadmap
+          Striver A2Z Sheet
         </h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Conquer each node sequentially. Solve problems to earn XP, trigger boss fights, and unlock advanced data structure arenas.
+          Redesigned gaming-inspired learning tree. Master steps sequentially, conquer daily concept challenges, and earn XP.
         </p>
       </div>
 
-      {/* Nodes Map */}
-      <div className="relative flex flex-col items-center gap-12 py-8">
-        {/* Winding Vertical Connector Line */}
-        <div className="absolute top-10 bottom-10 w-1 bg-gradient-to-b from-primary via-info-cyan to-muted z-0 pointer-events-none" />
+      {/* Explorer Tree */}
+      <div className="space-y-8 max-w-4xl mx-auto relative pl-4 md:pl-6">
+        {/* Beautiful Left Connector Line for Steps */}
+        <div className="absolute left-0 top-6 bottom-6 w-[2px] bg-gradient-to-b from-primary/80 via-info-cyan/40 to-muted/20" />
 
-        {topics.map((topic, idx) => {
-          const solved = topic.problems_solved || 0;
-          const total = topic.problems.length;
-          const mastery = topic.mastery_percentage || 0;
-          const isCompleted = mastery === 100;
-          
-          // Lock node if previous topic is not completed (i.e. solved < total)
-          const isLocked = idx > 0 && topics[idx - 1] && (
-            (topics[idx - 1].problems.length > 0 && (topics[idx - 1].problems_solved || 0) < topics[idx - 1].problems.length)
-          );
-
+        {nodes.map((step) => {
+          const isStepExpanded = expandedNodes[step.id];
           return (
-            <motion.div
-              key={topic.id}
-              className={`w-full max-w-3xl relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 p-6 border rounded-2xl transition-all duration-300 ${
-                isLocked 
-                  ? "bg-[#06060a]/40 border-card-border/50 opacity-60" 
-                  : "glass-card border-card-border hover:border-white/10"
-              }`}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1, duration: 0.5 }}
-            >
-              {/* Left Column: Icon/Order & Connection Info */}
-              <div className="flex md:flex-col justify-between items-start">
-                <div className="flex items-center gap-3 md:flex-col md:items-start">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black border text-lg ${
-                    isCompleted 
-                      ? "bg-success-emerald/10 text-success-emerald border-success-emerald/20 shadow-lg shadow-success-emerald/5" 
-                      : isLocked 
-                        ? "bg-zinc-950 text-zinc-600 border-zinc-900" 
-                        : "bg-primary/10 text-primary border-primary/20 shadow-lg shadow-primary/5"
-                  }`}>
-                    {isLocked ? <Lock className="w-5 h-5" /> : `0${topic.order}`}
-                  </div>
-                  <div className="md:mt-3">
-                    <span className="text-xs font-mono font-bold text-xp-gold uppercase block">
-                      +{topic.xp_reward} XP Node
+            <div key={step.id} className="relative space-y-4">
+              {/* Step indicator node on the line */}
+              <div className={`absolute -left-[21px] md:-left-[29px] w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs md:text-sm z-20 ${
+                step.is_completed 
+                  ? "bg-success-emerald border-success-emerald text-zinc-950" 
+                  : step.is_locked
+                    ? "bg-zinc-950 border-zinc-800 text-zinc-600"
+                    : "bg-zinc-950 border-primary text-primary shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+              }`}>
+                {step.is_completed ? "✓" : step.order_index}
+              </div>
+
+              {/* Step Card Header */}
+              <div 
+                onClick={() => toggleExpand(step.id)}
+                className={`w-full p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none transition-all duration-300 ${
+                  step.is_locked
+                    ? "bg-zinc-950/30 border-zinc-900 opacity-60 pointer-events-none"
+                    : "glass-card border-card-border hover:border-primary/40 shadow-lg shadow-black/10"
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-xp-gold uppercase font-bold">Step 0{step.order_index}</span>
+                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(step.difficulty)}`}>
+                      {step.difficulty}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {total > 0 ? `${solved} / ${total} Solved` : "0 problems"}
-                    </span>
-                    {!isLocked && (
-                      <span className="text-[10px] text-info-cyan font-mono block mt-1 font-bold">
-                        Est: {topic.estimated_completion}
-                      </span>
-                    )}
                   </div>
+                  <h2 className="text-xl font-black text-white">{step.title}</h2>
+                  <p className="text-xs text-muted-foreground max-w-xl">{step.description}</p>
+                </div>
+
+                <div className="flex items-center gap-4 self-end md:self-center">
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                      <span>PROGRESS:</span>
+                      <span className="text-xp-gold font-bold">{step.progress_percentage}%</span>
+                    </div>
+                    <div className="w-24 h-1.5 bg-zinc-950 border border-card-border rounded-full mt-1 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-xp-gold to-yellow-500 transition-all duration-300"
+                        style={{ width: `${step.progress_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {isStepExpanded ? <ChevronDown className="w-5 h-5 text-zinc-400" /> : <ChevronRight className="w-5 h-5 text-zinc-400" />}
                 </div>
               </div>
 
-              {/* Middle Column: Node Info & Problem Previews (2 cols) */}
-              <div className="md:col-span-2 space-y-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                    {topic.title}
-                    {isCompleted && <CheckCircle2 className="w-5 h-5 text-success-emerald inline" />}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {topic.description}
-                  </p>
-                  
-                  {/* Topic Mastery Progress Bar */}
-                  {!isLocked && (
-                    <div className="mt-3 space-y-1">
-                      <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-                        <span>PROBLEMS SOLVED</span>
-                        <span className="text-xp-gold font-bold">{solved} / {total}</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-zinc-950 border border-card-border/50 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-xp-gold to-yellow-500" 
-                          style={{ width: `${total > 0 ? (solved / total) * 100 : 0}%` }} 
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {/* Step Sections (collapsible) */}
+              <AnimatePresence>
+                {isStepExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden pl-4 md:pl-8 space-y-4 relative"
+                  >
+                    {/* Section Connector Line */}
+                    <div className="absolute left-1 top-2 bottom-6 w-[1px] bg-zinc-800" />
 
-                {/* Problems Previews inside Node */}
-                {!isLocked && topic.problems.length > 0 && (
-                  <div className="space-y-2 border-t border-card-border/50 pt-3">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">Problem Workspace:</span>
-                    <div className="grid grid-cols-1 gap-2">
-                      {topic.problems.map((p) => {
-                        const normalizedStatus = (p.status || "NOT_STARTED").toUpperCase();
-                        const problemSolved = normalizedStatus === "SOLVED" || normalizedStatus === "MASTERED" || normalizedStatus === "REVISION_DUE" || p.status === "Solved" || p.status === "Mastered" || p.status === "Revision Due";
-                        return (
+                    {step.children.map((section) => {
+                      const isSectionExpanded = expandedNodes[section.id];
+                      return (
+                        <div key={section.id} className="relative space-y-3">
+                          {/* Section indicator dot */}
+                          <div className={`absolute -left-[20px] md:-left-[36px] w-3 h-3 rounded-full border z-20 ${
+                            section.is_completed
+                              ? "bg-success-emerald border-success-emerald"
+                              : section.is_locked
+                                ? "bg-zinc-950 border-zinc-800"
+                                : "bg-zinc-950 border-info-cyan shadow-[0_0_6px_rgba(6,182,212,0.4)]"
+                          }`} />
+
+                          {/* Section Header */}
                           <div 
-                            key={p.id} 
-                            className="flex justify-between items-center px-3 py-2 rounded-lg border border-card-border bg-[#030303]/60 hover:bg-[#07070b]/60 transition-colors"
+                            onClick={() => toggleExpand(section.id)}
+                            className={`p-3 rounded-lg border flex items-center justify-between gap-4 cursor-pointer select-none transition-all duration-200 ${
+                              section.is_locked
+                                ? "bg-zinc-950/20 border-zinc-900/60 opacity-50"
+                                : "bg-zinc-950/40 border-card-border/80 hover:border-info-cyan/40"
+                            }`}
                           >
-                            <span className={`text-xs font-medium ${problemSolved ? "text-success-emerald/80 line-through" : "text-white/90"}`}>
-                              {p.title}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {getStatusBadge(p.status)}
-                              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(p.difficulty)}`}>
-                                {p.difficulty}
+                            <div className="space-y-0.5">
+                              <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold">Section {section.order_index}</span>
+                              <h3 className="text-md font-bold text-white/90">{section.title}</h3>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-mono text-muted-foreground">
+                                {section.problems_solved} / {section.total_problems} Solved
                               </span>
-                              {problemSolved ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-success-emerald" />
-                              ) : (
-                                <span className="text-[9px] font-mono font-bold text-xp-gold">+{p.xp_reward} XP</span>
-                              )}
+                              {isSectionExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Right Column: Call to Action */}
-              <div className="flex items-center justify-end">
-                {isLocked ? (
-                  <button className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-zinc-950 border border-zinc-900 text-zinc-600 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed">
-                    <Lock className="w-4 h-4" /> Locked
-                  </button>
-                ) : (
-                  <Link href={`/roadmap/${topic.id}`} className="w-full md:w-auto">
-                    <button className="w-full md:w-auto px-5 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 shadow-md shadow-primary/10 hover:shadow-primary/20 group cursor-pointer">
-                      <Play className="w-4 h-4 fill-white transition-transform group-hover:scale-110" />
-                      <span>Enter Arena</span>
-                      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                    </button>
-                  </Link>
+                          {/* Section Topics (collapsible) */}
+                          <AnimatePresence>
+                            {isSectionExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden pl-4 md:pl-6 space-y-3 relative"
+                              >
+                                {/* Topic Connector Line */}
+                                <div className="absolute left-1 top-2 bottom-6 w-[1px] bg-zinc-800/60 border-dashed border-l border-zinc-800" />
+
+                                {section.children.map((topic) => {
+                                  return (
+                                    <div key={topic.id} className="relative">
+                                      {/* Topic Dot */}
+                                      <div className={`absolute -left-[20px] md:-left-[28px] w-2.5 h-2.5 rounded-full border z-20 ${
+                                        topic.is_completed
+                                          ? "bg-success-emerald border-success-emerald"
+                                          : topic.is_locked
+                                            ? "bg-zinc-950 border-zinc-900"
+                                            : "bg-zinc-950 border-zinc-700"
+                                      }`} />
+
+                                      {/* Topic Card */}
+                                      <div 
+                                        className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 ${
+                                          topic.is_locked
+                                            ? "bg-[#06060a]/20 border-zinc-900/40 opacity-40 select-none"
+                                            : "glass-card border-card-border hover:border-zinc-700"
+                                        }`}
+                                      >
+                                        <div className="space-y-2 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <h4 className="text-sm font-bold text-white">{topic.title}</h4>
+                                            <span className={`text-[8px] font-extrabold uppercase px-1 rounded border ${getDifficultyColor(topic.difficulty)}`}>
+                                              {topic.difficulty}
+                                            </span>
+                                            {topic.is_completed && (
+                                              <span className="flex items-center gap-0.5 text-[9px] font-mono text-success-emerald font-bold uppercase">
+                                                ✓ Completed
+                                              </span>
+                                            )}
+                                          </div>
+                                          {topic.description && (
+                                            <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xl">
+                                              {topic.description}
+                                            </p>
+                                          )}
+
+                                          {/* Metrics Grid */}
+                                          {!topic.is_locked && (
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-card-border/50">
+                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+                                                <Clock className="w-3 h-3 text-zinc-500" />
+                                                <span>EST: {topic.estimated_time || 0} mins</span>
+                                              </div>
+                                              <div className="flex items-center gap-1.5 text-[10px] text-xp-gold font-mono font-bold">
+                                                <Zap className="w-3 h-3 text-xp-gold" />
+                                                <span>+{topic.xp_reward} XP</span>
+                                              </div>
+                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+                                                <TrendingUp className="w-3 h-3 text-zinc-500" />
+                                                <span>COMPLETION: {topic.progress_percentage}%</span>
+                                              </div>
+                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+                                                <FileQuestion className="w-3 h-3 text-zinc-500" />
+                                                {topic.quiz_completed ? (
+                                                  <span className="text-success-emerald font-bold">🏆 QUIZ: {topic.quiz_best_score}%</span>
+                                                ) : (
+                                                  <span>QUIZ: NOT SOLVED</span>
+                                                )}
+                                              </div>
+                                              {topic.revision_due_count > 0 && (
+                                                <div className="col-span-2 sm:col-span-4 flex items-center gap-1.5 text-[10px] text-red-500 font-mono font-bold animate-pulse">
+                                                  <ShieldAlert className="w-3 h-3 text-red-500" />
+                                                  <span>REVISION TASK DUE</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        <div className="flex items-center justify-end">
+                                          {topic.is_locked ? (
+                                            <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-900/60 text-zinc-700">
+                                              <Lock className="w-4 h-4" />
+                                            </div>
+                                          ) : (
+                                            <Link href={`/roadmap/${topic.id}`}>
+                                              <button className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/95 text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md shadow-primary/10 transition-all duration-200">
+                                                <Play className="w-3 h-3 fill-white" />
+                                                <span>Enter</span>
+                                                <ChevronRight className="w-3.5 h-3.5" />
+                                              </button>
+                                            </Link>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
                 )}
-              </div>
-            </motion.div>
+              </AnimatePresence>
+            </div>
           );
         })}
       </div>
