@@ -1,5 +1,6 @@
-from app.models.user import User, XPHistory
-from app.models.roadmap import RoadmapNode, Problem
+from app.models.roadmap import (
+    RoadmapNode, Problem, RoadmapStep, RoadmapSection, RoadmapTopic, RoadmapLesson, LessonVideo, ImportLog
+)
 from app.models.progress import UserProgress, UserNodeProgress
 from app.models.achievement import Achievement, UserAchievement
 from app.models.revision import RevisionTask

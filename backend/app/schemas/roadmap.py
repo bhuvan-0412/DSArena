@@ -253,6 +253,97 @@ class LessonKnowledgeHubResponse(BaseModel):
     tips: LessonTipsResponse
     resources: List[LessonResourceItemResponse] = []
 
+# Data-Driven Roadmap Engine Schemas
+class LessonVideoSchema(BaseModel):
+    id: int
+    lesson_id: str
+    title: str
+    provider: str = "youtube"
+    url: str
+    video_id: str
+    thumbnail: Optional[str] = None
+    duration: Optional[str] = None
+    is_primary: bool = True
+    source: Optional[str] = "Striver A2Z Excel"
+    order_index: int = 1
+
+    class Config:
+        from_attributes = True
+
+class RoadmapLessonSchema(BaseModel):
+    id: str
+    topic_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    title: str
+    slug: str
+    description: Optional[str] = None
+    order_index: int
+    estimated_duration: int = 15
+    difficulty: str = "Easy"
+    videos: List[LessonVideoSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class RoadmapTopicSchema(BaseModel):
+    id: str
+    section_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    title: str
+    slug: str
+    description: Optional[str] = None
+    order_index: int
+    lessons: List[RoadmapLessonSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class RoadmapSectionSchema(BaseModel):
+    id: str
+    step_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    title: str
+    slug: str
+    description: Optional[str] = None
+    order_index: int
+    topics: List[RoadmapTopicSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class RoadmapStepSchema(BaseModel):
+    id: str
+    title: str
+    slug: str
+    description: Optional[str] = None
+    order_index: int
+    sections: List[RoadmapSectionSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class RoadmapTreeResponse(BaseModel):
+    steps: List[RoadmapStepSchema] = []
+
+class RoadmapStatisticsResponse(BaseModel):
+    total_steps: int = 0
+    total_sections: int = 0
+    total_topics: int = 0
+    total_lessons: int = 0
+    total_videos: int = 0
+    video_coverage: str = "0%"
+    completion_percentage: float = 0.0
+
+class ImportReportResponse(BaseModel):
+    imported: int = 0
+    updated: int = 0
+    skipped: int = 0
+    duplicates: int = 0
+    errors: int = 0
+    video_coverage: str = "0%"
+    log_id: int = 0
+
+
 
 class BookmarkToggleRequest(BaseModel):
     target_type: str  # 'concept', 'problem', 'resource'

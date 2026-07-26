@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models.roadmap import RoadmapNode, Problem
+from app.models.roadmap import (
+    RoadmapNode, Problem, RoadmapStep, RoadmapSection, RoadmapTopic, RoadmapLesson, LessonVideo, ImportLog
+)
 from app.models.progress import UserProgress, UserNodeProgress
 from app.models.revision import RevisionTask
 from app.models.user import User, XPHistory
@@ -17,7 +19,9 @@ from app.schemas.roadmap import (
     NodeDetailResponse, NodeProgressResponse, NodeCompletionResponse, NextNodeResponse, RoadmapProgressResponse,
     LearningObjectives, PrerequisiteNodeResponse, LessonNavigationResponse,
     LessonNoteRequest, LessonNoteResponse, LessonTakeawaysResponse, LessonTipsResponse,
-    LessonResourceItemResponse, LessonKnowledgeHubResponse
+    LessonResourceItemResponse, LessonKnowledgeHubResponse,
+    LessonVideoSchema, RoadmapLessonSchema, RoadmapTopicSchema, RoadmapSectionSchema,
+    RoadmapStepSchema, RoadmapTreeResponse, RoadmapStatisticsResponse, ImportReportResponse
 )
 from typing import List, Dict, Any, Optional
 import datetime
@@ -2156,6 +2160,339 @@ def get_lesson_resources_endpoint(node_id: str, db: Session = Depends(get_db)):
     if not node:
         raise HTTPException(status_code=404, detail="Roadmap node not found")
     return _get_lesson_resources_helper(db, node)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sprint: Data-Driven Roadmap Engine APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("", response_model=RoadmapTreeResponse)
+@router.get("/tree", response_model=RoadmapTreeResponse)
+def get_full_data_driven_roadmap(db: Session = Depends(get_db)):
+    """
+    Returns the complete 100% data-driven roadmap tree loaded from the database:
+    Step -> Section -> Topic -> Lesson -> LessonVideo.
+    Zero hardcoded nodes!
+    """
+    steps = db.query(RoadmapStep).order_by(RoadmapStep.order_index.asc()).all()
+    if not steps:
+        step_nodes = db.query(RoadmapNode).filter(RoadmapNode.type == "step").order_by(RoadmapNode.order_index.asc()).all()
+        step_list = []
+        for sn in step_nodes:
+            sections = db.query(RoadmapNode).filter(RoadmapNode.parent_id == sn.id, RoadmapNode.type == "section").order_by(RoadmapNode.order_index.asc()).all()
+            sec_list = []
+            for sec in sections:
+                topics = db.query(RoadmapNode).filter(RoadmapNode.parent_id == sec.id, RoadmapNode.type == "topic").order_by(RoadmapNode.order_index.asc()).all()
+                top_list = []
+                for top in topics:
+                    top_list.append(RoadmapTopicSchema(
+                        id=top.id,
+                        section_id=top.parent_id,
+                        parent_id=top.parent_id,
+                        title=top.title,
+                        slug=top.slug or top.id,
+                        description=top.description,
+                        order_index=top.order_index,
+                        lessons=[]
+                    ))
+                sec_list.append(RoadmapSectionSchema(
+                    id=sec.id,
+                    step_id=sec.parent_id,
+                    parent_id=sec.parent_id,
+                    title=sec.title,
+                    slug=sec.slug or sec.id,
+                    description=sec.description,
+                    order_index=sec.order_index,
+                    topics=top_list
+                ))
+            step_list.append(RoadmapStepSchema(
+                id=sn.id,
+                title=sn.title,
+                slug=sn.slug or sn.id,
+                description=sn.description,
+                order_index=sn.order_index,
+                sections=sec_list
+            ))
+        return RoadmapTreeResponse(steps=step_list)
+
+    step_schemas = []
+    for step in steps:
+        sections = db.query(RoadmapSection).filter(
+            (RoadmapSection.step_id == step.id) | (RoadmapSection.parent_id == step.id)
+        ).order_by(RoadmapSection.order_index.asc()).all()
+
+        sec_schemas = []
+        for sec in sections:
+            topics = db.query(RoadmapTopic).filter(
+                (RoadmapTopic.section_id == sec.id) | (RoadmapTopic.parent_id == sec.id)
+            ).order_by(RoadmapTopic.order_index.asc()).all()
+
+            top_schemas = []
+            for top in topics:
+                lessons = db.query(RoadmapLesson).filter(
+                    (RoadmapLesson.topic_id == top.id) | (RoadmapLesson.parent_id == top.id)
+                ).order_by(RoadmapLesson.order_index.asc()).all()
+
+                if not lessons:
+                    topic_nodes = db.query(RoadmapNode).filter(RoadmapNode.parent_id == top.id).order_by(RoadmapNode.order_index.asc()).all()
+                    les_schemas = []
+                    for tn in topic_nodes:
+                        vids = []
+                        if tn.youtube_video_id or tn.youtube_url:
+                            vids.append(LessonVideoSchema(
+                                id=1,
+                                lesson_id=tn.id,
+                                title=tn.title,
+                                provider="youtube",
+                                url=tn.youtube_url or "",
+                                video_id=tn.youtube_video_id or "",
+                                thumbnail=tn.thumbnail_url,
+                                is_primary=True,
+                                source="Striver A2Z Excel",
+                                order_index=1
+                            ))
+                        les_schemas.append(RoadmapLessonSchema(
+                            id=tn.id,
+                            topic_id=top.id,
+                            parent_id=top.id,
+                            title=tn.title,
+                            slug=tn.slug or tn.id,
+                            description=tn.description,
+                            order_index=tn.order_index,
+                            estimated_duration=tn.estimated_time or 15,
+                            difficulty=tn.difficulty or "Easy",
+                            videos=vids
+                        ))
+                else:
+                    les_schemas = []
+                    for les in lessons:
+                        videos = db.query(LessonVideo).filter(LessonVideo.lesson_id == les.id).order_by(LessonVideo.order_index.asc()).all()
+                        v_schemas = [LessonVideoSchema.from_orm(v) for v in videos]
+                        les_schemas.append(RoadmapLessonSchema(
+                            id=les.id,
+                            topic_id=les.topic_id or les.parent_id,
+                            parent_id=les.parent_id or les.topic_id,
+                            title=les.title,
+                            slug=les.slug or les.id,
+                            description=les.description,
+                            order_index=les.order_index,
+                            estimated_duration=les.estimated_duration or 15,
+                            difficulty=les.difficulty or "Easy",
+                            videos=v_schemas
+                        ))
+
+                top_schemas.append(RoadmapTopicSchema(
+                    id=top.id,
+                    section_id=top.section_id or top.parent_id,
+                    parent_id=top.parent_id or top.section_id,
+                    title=top.title,
+                    slug=top.slug or top.id,
+                    description=top.description,
+                    order_index=top.order_index,
+                    lessons=les_schemas
+                ))
+
+            sec_schemas.append(RoadmapSectionSchema(
+                id=sec.id,
+                step_id=sec.step_id or sec.parent_id,
+                parent_id=sec.parent_id or sec.step_id,
+                title=sec.title,
+                slug=sec.slug or sec.id,
+                description=sec.description,
+                order_index=sec.order_index,
+                topics=top_schemas
+            ))
+
+        step_schemas.append(RoadmapStepSchema(
+            id=step.id,
+            title=step.title,
+            slug=step.slug or step.id,
+            description=step.description,
+            order_index=step.order_index,
+            sections=sec_schemas
+        ))
+
+    return RoadmapTreeResponse(steps=step_schemas)
+
+
+@router.get("/lesson/{lesson_id}", response_model=RoadmapLessonSchema)
+def get_data_driven_lesson(lesson_id: str, db: Session = Depends(get_db)):
+    """Returns specific lesson details and attached primary videos."""
+    lesson = db.query(RoadmapLesson).filter(RoadmapLesson.id == lesson_id).first()
+    if not lesson:
+        node = db.query(RoadmapNode).filter(RoadmapNode.id == lesson_id).first()
+        if not node:
+            raise HTTPException(status_code=404, detail=f"Lesson '{lesson_id}' not found.")
+        vids = []
+        if node.youtube_video_id or node.youtube_url:
+            vids.append(LessonVideoSchema(
+                id=1,
+                lesson_id=node.id,
+                title=node.title,
+                provider="youtube",
+                url=node.youtube_url or "",
+                video_id=node.youtube_video_id or "",
+                thumbnail=node.thumbnail_url,
+                is_primary=True,
+                source="Striver A2Z Excel",
+                order_index=1
+            ))
+        return RoadmapLessonSchema(
+            id=node.id,
+            topic_id=node.parent_id,
+            parent_id=node.parent_id,
+            title=node.title,
+            slug=node.slug or node.id,
+            description=node.description,
+            order_index=node.order_index,
+            estimated_duration=node.estimated_time or 15,
+            difficulty=node.difficulty or "Easy",
+            videos=vids
+        )
+
+    videos = db.query(LessonVideo).filter(LessonVideo.lesson_id == lesson.id).order_by(LessonVideo.order_index.asc()).all()
+    v_schemas = [LessonVideoSchema.from_orm(v) for v in videos]
+    return RoadmapLessonSchema(
+        id=lesson.id,
+        topic_id=lesson.topic_id or lesson.parent_id,
+        parent_id=lesson.parent_id or lesson.topic_id,
+        title=lesson.title,
+        slug=lesson.slug or lesson.id,
+        description=lesson.description,
+        order_index=lesson.order_index,
+        estimated_duration=lesson.estimated_duration or 15,
+        difficulty=lesson.difficulty or "Easy",
+        videos=v_schemas
+    )
+
+
+@router.get("/children/{parent_id}")
+def get_roadmap_children(parent_id: str, db: Session = Depends(get_db)):
+    """Returns child items under any parent ID."""
+    nodes = db.query(RoadmapNode).filter(RoadmapNode.parent_id == parent_id).order_by(RoadmapNode.order_index.asc()).all()
+    return [
+        {
+            "id": n.id,
+            "parent_id": n.parent_id,
+            "title": n.title,
+            "slug": n.slug,
+            "type": n.type,
+            "order_index": n.order_index,
+            "youtube_url": n.youtube_url,
+            "youtube_video_id": n.youtube_video_id,
+            "thumbnail_url": n.thumbnail_url
+        }
+        for n in nodes
+    ]
+
+
+@router.get("/video/{video_id}", response_model=LessonVideoSchema)
+def get_video_by_id(video_id: str, db: Session = Depends(get_db)):
+    """Returns details for a video by YouTube video ID."""
+    v = db.query(LessonVideo).filter(LessonVideo.video_id == video_id).first()
+    if not v:
+        node = db.query(RoadmapNode).filter(RoadmapNode.youtube_video_id == video_id).first()
+        if not node:
+            raise HTTPException(status_code=404, detail=f"Video ID '{video_id}' not found.")
+        return LessonVideoSchema(
+            id=1,
+            lesson_id=node.id,
+            title=node.title,
+            provider="youtube",
+            url=node.youtube_url or f"https://youtube.com/watch?v={video_id}",
+            video_id=video_id,
+            thumbnail=node.thumbnail_url or f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg",
+            is_primary=True,
+            source="Striver A2Z Excel",
+            order_index=1
+        )
+    return LessonVideoSchema.from_orm(v)
+
+
+@router.get("/next/{lesson_id}")
+def get_next_lesson_in_sequence(lesson_id: str, db: Session = Depends(get_db)):
+    """Returns the next lesson in the curriculum sequence."""
+    nodes = db.query(RoadmapNode).filter(RoadmapNode.type.in_(["topic", "lesson"])).order_by(RoadmapNode.order_index.asc()).all()
+    found = False
+    for i, n in enumerate(nodes):
+        if n.id == lesson_id:
+            if i + 1 < len(nodes):
+                next_node = nodes[i + 1]
+                return {
+                    "id": next_node.id,
+                    "title": next_node.title,
+                    "order_index": next_node.order_index,
+                    "parent_id": next_node.parent_id
+                }
+            break
+    return {"message": "End of roadmap reached.", "next_node": None}
+
+
+@router.get("/previous/{lesson_id}")
+def get_previous_lesson_in_sequence(lesson_id: str, db: Session = Depends(get_db)):
+    """Returns the previous lesson in the curriculum sequence."""
+    nodes = db.query(RoadmapNode).filter(RoadmapNode.type.in_(["topic", "lesson"])).order_by(RoadmapNode.order_index.asc()).all()
+    for i, n in enumerate(nodes):
+        if n.id == lesson_id:
+            if i > 0:
+                prev_node = nodes[i - 1]
+                return {
+                    "id": prev_node.id,
+                    "title": prev_node.title,
+                    "order_index": prev_node.order_index,
+                    "parent_id": prev_node.parent_id
+                }
+            break
+    return {"message": "Beginning of roadmap reached.", "previous_node": None}
+
+
+@router.get("/statistics", response_model=RoadmapStatisticsResponse)
+def get_roadmap_statistics(clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns comprehensive counts, video coverage percentages, and user progress metrics."""
+    total_steps = db.query(RoadmapStep).count() or db.query(RoadmapNode).filter(RoadmapNode.type == "step").count()
+    total_sections = db.query(RoadmapSection).count() or db.query(RoadmapNode).filter(RoadmapNode.type == "section").count()
+    total_topics = db.query(RoadmapTopic).count() or db.query(RoadmapNode).filter(RoadmapNode.type == "topic").count()
+    total_lessons = db.query(RoadmapLesson).count() or total_topics
+    total_videos = db.query(LessonVideo).count() or db.query(RoadmapNode).filter(RoadmapNode.youtube_video_id.isnot(None)).count()
+
+    video_coverage_pct = round((total_videos / max(1, total_topics)) * 100, 1)
+
+    user_completed = 0
+    user = _get_or_create_user(db, clerk_id)
+    if user:
+        user_completed = db.query(UserNodeProgress).filter(
+            UserNodeProgress.user_id == user.id,
+            UserNodeProgress.status == NodeStatus.COMPLETED
+        ).count()
+
+    completion_pct = round((user_completed / max(1, total_topics)) * 100, 1)
+
+    return RoadmapStatisticsResponse(
+        total_steps=total_steps,
+        total_sections=total_sections,
+        total_topics=total_topics,
+        total_lessons=total_lessons,
+        total_videos=total_videos,
+        video_coverage=f"{video_coverage_pct}%",
+        completion_percentage=completion_pct
+    )
+
+
+@router.post("/import", response_model=ImportReportResponse)
+def import_roadmap_from_excel(db: Session = Depends(get_db)):
+    """Admin-only endpoint to trigger roadmap import from Striver_A2Z_Playlist_Links.xlsx."""
+    from app.services.roadmap_importer import RoadmapImporter
+    importer = RoadmapImporter(db=db)
+    result = importer.import_roadmap()
+    return ImportReportResponse(
+        imported=result.get("imported", 0),
+        updated=result.get("updated", 0),
+        skipped=result.get("skipped", 0),
+        duplicates=result.get("duplicates", 0),
+        errors=result.get("errors", 0),
+        video_coverage=result.get("video_coverage", "0%"),
+        log_id=result.get("log_id", 0)
+    )
+
 
 
 

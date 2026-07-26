@@ -1,6 +1,86 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON
+import datetime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+class RoadmapStep(Base):
+    __tablename__ = "roadmap_steps"
+
+    id = Column(String, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class RoadmapSection(Base):
+    __tablename__ = "roadmap_sections"
+
+    id = Column(String, primary_key=True, index=True)
+    step_id = Column(String, ForeignKey("roadmap_steps.id", ondelete="CASCADE"), nullable=True, index=True)
+    parent_id = Column(String, nullable=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class RoadmapTopic(Base):
+    __tablename__ = "roadmap_topics"
+
+    id = Column(String, primary_key=True, index=True)
+    section_id = Column(String, ForeignKey("roadmap_sections.id", ondelete="CASCADE"), nullable=True, index=True)
+    parent_id = Column(String, nullable=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class RoadmapLesson(Base):
+    __tablename__ = "roadmap_lessons"
+
+    id = Column(String, primary_key=True, index=True)
+    topic_id = Column(String, ForeignKey("roadmap_topics.id", ondelete="CASCADE"), nullable=True, index=True)
+    parent_id = Column(String, nullable=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)
+    estimated_duration = Column(Integer, default=15)
+    difficulty = Column(String, default="Easy")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class LessonVideo(Base):
+    __tablename__ = "lesson_videos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lesson_id = Column(String, ForeignKey("roadmap_lessons.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    provider = Column(String, default="youtube")
+    url = Column(String, nullable=False)
+    video_id = Column(String, nullable=False)
+    thumbnail = Column(String, nullable=True)
+    duration = Column(String, nullable=True)
+    is_primary = Column(Boolean, default=True)
+    source = Column(String, default="Striver A2Z Excel")
+    order_index = Column(Integer, default=1)
+
+class ImportLog(Base):
+    __tablename__ = "import_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    import_date = Column(DateTime, default=datetime.datetime.utcnow)
+    imported_by = Column(String, default="Admin")
+    excel_version = Column(String, default="1.0")
+    rows_imported = Column(Integer, default=0)
+    rows_updated = Column(Integer, default=0)
+    rows_skipped = Column(Integer, default=0)
+    errors = Column(JSON, nullable=True)
 
 class RoadmapNode(Base):
     __tablename__ = "roadmap_nodes"
@@ -111,3 +191,4 @@ class Problem(RoadmapNode):
 
     # Relationships
     user_progress = relationship("UserProgress", back_populates="problem", cascade="all, delete-orphan")
+
