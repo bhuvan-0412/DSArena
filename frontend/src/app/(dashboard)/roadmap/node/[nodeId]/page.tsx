@@ -21,6 +21,7 @@ import { NotesPanel } from "@/components/roadmap/NotesPanel";
 import { SummaryCard, TakeawaysData } from "@/components/roadmap/SummaryCard";
 import { TipCard, TipsData } from "@/components/roadmap/TipCard";
 import { ResourceCard, ResourceItem } from "@/components/roadmap/ResourceCard";
+import { RoadmapBreadcrumbs } from "@/components/roadmap/RoadmapBreadcrumbs";
 
 interface NodeData {
   id: string;
@@ -330,11 +331,17 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 pb-24">
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between">
-        <Link href="/roadmap">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
-            <ArrowLeft className="w-4 h-4 text-zinc-400" />
+      {/* Top Navigation Bar & Breadcrumbs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-4">
+        <RoadmapBreadcrumbs
+          stepTitle={node.metadata?.step_title || "Striver Roadmap"}
+          sectionTitle={node.parent_title}
+          lessonTitle={node.title}
+        />
+
+        <Link href="/roadmap" className="shrink-0">
+          <button className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
+            <ArrowLeft className="w-3.5 h-3.5 text-zinc-400" />
             <span>Back to Roadmap</span>
           </button>
         </Link>

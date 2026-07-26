@@ -1,48 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuthUser } from "@/hooks/use-auth-user";
-import { 
-  Compass, 
-  Play, 
-  CheckCircle2, 
-  ChevronRight, 
-  ChevronDown, 
-  Lock, 
-  Loader2, 
-  Clock, 
-  Zap, 
-  TrendingUp,
-  Video
-} from "lucide-react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { RoadmapProgressBar } from "@/components/roadmap/RoadmapProgressBar";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
-interface RoadmapNode {
-  id: string;
-  parent_id?: string;
-  title: string;
-  slug: string;
-  description?: string;
-  type: string;  // 'step', 'section', 'subsection', 'topic', 'problem'
-  order_index: number;
-  estimated_time?: number;
-  xp_reward: number;
-  difficulty?: string;
-  status?: string;
-  
-  is_completed: boolean;
-  is_locked: boolean;
-  progress_percentage: number;
-  problems_solved: number;
-  total_problems: number;
-  quiz_completed: boolean;
-  quiz_best_score?: number;
-  revision_due_count: number;
-  
-  children: RoadmapNode[];
-}
+import { useAuthUser } from "@/hooks/use-auth-user";
+import { RoadmapHeader } from "@/components/roadmap/RoadmapHeader";
+import { RoadmapQuickActions } from "@/components/roadmap/RoadmapQuickActions";
+import { StepCard } from "@/components/roadmap/StepCard";
+import { RecentlyCompletedSection } from "@/components/roadmap/RecentlyCompletedSection";
+import { AchievementsSection } from "@/components/roadmap/AchievementsSection";
+import { RoadmapNode } from "@/components/roadmap/LessonRow";
 
 interface OverallProgress {
   topic_name: string;
@@ -52,13 +20,21 @@ interface OverallProgress {
   overall_xp: number;
 }
 
+interface RecentlyViewedLesson {
+  id: string;
+  title: string;
+  stepTitle?: string;
+}
+
 const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 export default function RoadmapPage() {
+  const router = useRouter();
   const { stats, isLoaded } = useAuthUser();
+
   const [nodes, setNodes] = useState<RoadmapNode[]>([]);
   const [overallProgress, setOverallProgress] = useState<OverallProgress>({
-    topic_name: "Striver A2Z DSA Roadmap",
+    topic_name: "Striver A2Z DSA Sheet",
     completed_videos: 0,
     total_videos: 0,
     progress_percentage: 0,
@@ -67,25 +43,35 @@ export default function RoadmapPage() {
   const [loading, setLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("ALL");
+
+  // Recently viewed lessons history
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedLesson[]>([]);
+
+  // Ref to container for scroll jump
+  const stepContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!isLoaded) return;
-    
+
     async function fetchRoadmapData() {
       try {
         setLoading(true);
         const clerkId = stats?.clerk_id || "mock_user_striver";
-        
+
         const [nodesRes, progRes] = await Promise.all([
           fetch(`${BACKEND_URL}/roadmap/nodes?clerk_id=${clerkId}`),
           fetch(`${BACKEND_URL}/roadmap/progress?clerk_id=${clerkId}`),
         ]);
 
         if (nodesRes.ok) {
-          const data = await nodesRes.json();
+          const data: RoadmapNode[] = await nodesRes.json();
           setNodes(data);
-          
-          // Auto-expand active path
-          const autoExpanded = getAutoExpandedNodes(data);
+
+          // Smart auto-expansion: expand active current path, collapse completed steps
+          const autoExpanded = getSmartExpandedNodes(data);
           setExpandedNodes(autoExpanded);
         }
 
@@ -103,334 +89,353 @@ export default function RoadmapPage() {
     fetchRoadmapData();
   }, [isLoaded, stats?.clerk_id]);
 
-  const getAutoExpandedNodes = (nodeList: RoadmapNode[]): Record<string, boolean> => {
+  // Smart Collapsing Logic:
+  // - Completed steps collapsed by default
+  // - Current active step & section expanded
+  const getSmartExpandedNodes = (nodeList: RoadmapNode[]): Record<string, boolean> => {
     const expanded: Record<string, boolean> = {};
-    
-    const traverse = (list: RoadmapNode[]): boolean => {
-      for (const node of list) {
-        if (node.type === "step") {
-          expanded[node.id] = true;
-        }
+    let currentFound = false;
 
-        if (!node.is_completed) {
-          expanded[node.id] = true;
-          if (node.parent_id) {
-            expanded[node.parent_id] = true;
-          }
-          return true;
-        }
+    for (const step of nodeList) {
+      const stepSections = step.children || [];
+      const stepLessons = stepSections.flatMap((s) => s.children || []);
+      const isStepCompleted =
+        stepLessons.length > 0 &&
+        stepLessons.every((l) => l.is_completed || (l.status || "").toUpperCase() === "COMPLETED");
 
-        if (node.children && node.children.length > 0) {
-          const found = traverse(node.children);
-          if (found) {
-            expanded[node.id] = true;
-            return true;
+      if (!isStepCompleted && !currentFound) {
+        // Expand current step
+        expanded[step.id] = true;
+        currentFound = true;
+
+        for (const sec of stepSections) {
+          const secLessons = sec.children || [];
+          const isSecCompleted =
+            secLessons.length > 0 &&
+            secLessons.every((l) => l.is_completed || (l.status || "").toUpperCase() === "COMPLETED");
+
+          if (!isSecCompleted) {
+            expanded[sec.id] = true;
+            break;
           }
         }
       }
-      return false;
-    };
-    
-    traverse(nodeList);
+    }
+
+    // Fallback: If all are completed or none expanded, expand Step 1
+    if (Object.keys(expanded).length === 0 && nodeList.length > 0) {
+      expanded[nodeList[0].id] = true;
+      if (nodeList[0].children?.[0]) {
+        expanded[nodeList[0].children[0].id] = true;
+      }
+    }
+
     return expanded;
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedNodes(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+  // Locate next unlocked lesson
+  const findNextUnlockedLesson = (
+    nodeList: RoadmapNode[]
+  ): { lesson: RoadmapNode; stepTitle: string; secTitle: string } | null => {
+    for (const step of nodeList) {
+      for (const sec of step.children || []) {
+        for (const lesson of sec.children || []) {
+          const status = (
+            lesson.status || (lesson.is_completed ? "COMPLETED" : lesson.is_locked ? "LOCKED" : "AVAILABLE")
+          ).toUpperCase();
+
+          if (status !== "COMPLETED" && status !== "LOCKED") {
+            return { lesson, stepTitle: step.title, secTitle: sec.title };
+          }
+        }
+      }
+    }
+    // Fallback to first lesson
+    if (nodeList[0]?.children[0]?.children[0]) {
+      return {
+        lesson: nodeList[0].children[0].children[0],
+        stepTitle: nodeList[0].title,
+        secTitle: nodeList[0].children[0].title,
+      };
+    }
+    return null;
   };
+
+  const nextUnlockedInfo = useMemo(() => {
+    return findNextUnlockedLesson(nodes);
+  }, [nodes]);
+
+  // Aggregate metrics (Duration calculations removed)
+  const { totalLessonsCount, completedLessonsCount, allCompletedLessons } = useMemo(() => {
+    let total = 0;
+    let completed = 0;
+    const completedList: RoadmapNode[] = [];
+
+    nodes.forEach((step) => {
+      (step.children || []).forEach((sec) => {
+        (sec.children || []).forEach((lesson) => {
+          total += 1;
+          const status = (
+            lesson.status || (lesson.is_completed ? "COMPLETED" : "LOCKED")
+          ).toUpperCase();
+
+          if (status === "COMPLETED" || lesson.is_completed) {
+            completed += 1;
+            completedList.push(lesson);
+          }
+        });
+      });
+    });
+
+    return {
+      totalLessonsCount: total,
+      completedLessonsCount: completed,
+      allCompletedLessons: completedList,
+    };
+  }, [nodes]);
+
+  // Toggle node expansion
+  const toggleStepExpand = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedNodes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleSectionExpand = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedNodes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Expand all / Collapse all handlers
+  const handleExpandAll = () => {
+    const allExpanded: Record<string, boolean> = {};
+    nodes.forEach((step) => {
+      allExpanded[step.id] = true;
+      (step.children || []).forEach((sec) => {
+        allExpanded[sec.id] = true;
+      });
+    });
+    setExpandedNodes(allExpanded);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedNodes({});
+  };
+
+  const handleJumpToCurrentStep = () => {
+    if (stepContainerRef.current) {
+      stepContainerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleContinueLearning = () => {
+    if (nextUnlockedInfo) {
+      router.push(`/roadmap/node/${nextUnlockedInfo.lesson.id}`);
+    }
+  };
+
+  const handleSelectLesson = (lesson: RoadmapNode, stepTitle?: string) => {
+    // Update recently viewed history
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((item) => item.id !== lesson.id);
+      return [{ id: lesson.id, title: lesson.title, stepTitle }, ...filtered].slice(0, 5);
+    });
+  };
+
+  const handleNavigateLesson = (lesson: RoadmapNode) => {
+    router.push(`/roadmap/node/${lesson.id}`);
+  };
+
+  // Filtered nodes logic based on search query or active status filter
+  const processedNodes = useMemo(() => {
+    if (!searchQuery.trim() && activeFilter === "ALL") {
+      return nodes;
+    }
+
+    const q = searchQuery.toLowerCase().trim();
+
+    return nodes
+      .map((step) => {
+        const stepMatches =
+          !q ||
+          step.title.toLowerCase().includes(q) ||
+          (step.description && step.description.toLowerCase().includes(q));
+
+        const filteredSections = (step.children || [])
+          .map((sec) => {
+            const secMatches = !q || sec.title.toLowerCase().includes(q);
+
+            const filteredLessons = (sec.children || []).filter((lesson) => {
+              const status = (
+                lesson.status || (lesson.is_completed ? "COMPLETED" : lesson.is_locked ? "LOCKED" : "AVAILABLE")
+              ).toUpperCase();
+
+              // Status Filter Check
+              if (activeFilter === "COMPLETED" && !(status === "COMPLETED" || lesson.is_completed)) return false;
+              if (activeFilter === "IN_PROGRESS" && status !== "IN_PROGRESS") return false;
+              if (activeFilter === "UNLOCKED" && (lesson.is_locked || status === "LOCKED")) return false;
+              if (activeFilter === "LOCKED" && !lesson.is_locked && status !== "LOCKED") return false;
+
+              // Search Match Check
+              if (!q) return true;
+              return (
+                lesson.title.toLowerCase().includes(q) ||
+                lesson.slug.toLowerCase().includes(q) ||
+                lesson.id.toLowerCase().includes(q) ||
+                stepMatches ||
+                secMatches
+              );
+            });
+
+            if (filteredLessons.length > 0 || secMatches) {
+              return { ...sec, children: filteredLessons };
+            }
+            return null;
+          })
+          .filter(Boolean) as RoadmapNode[];
+
+        if (filteredSections.length > 0 || stepMatches) {
+          return { ...step, children: filteredSections };
+        }
+        return null;
+      })
+      .filter(Boolean) as RoadmapNode[];
+  }, [nodes, searchQuery, activeFilter]);
+
+  // Auto-expand matching steps/sections when searching
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const searchExpanded: Record<string, boolean> = {};
+      processedNodes.forEach((step) => {
+        searchExpanded[step.id] = true;
+        (step.children || []).forEach((sec) => {
+          searchExpanded[sec.id] = true;
+        });
+      });
+      setExpandedNodes(searchExpanded);
+    }
+  }, [searchQuery, processedNodes]);
 
   if (!isLoaded || loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground font-mono">RETRIEVING video learning paths...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
+        <p className="text-sm font-semibold text-slate-400">Loading DSA Arena Roadmap...</p>
       </div>
     );
   }
 
-  const getDifficultyColor = (diff?: string) => {
-    if (!diff) return "text-zinc-400 bg-zinc-900 border-zinc-800";
-    switch (diff.toLowerCase()) {
-      case "easy": return "text-success-emerald bg-success-emerald/10 border-success-emerald/20";
-      case "medium": return "text-yellow-500 bg-yellow-500/10 border-yellow-500/20";
-      case "hard": return "text-primary bg-primary/10 border-primary/20";
-      default: return "text-zinc-400 bg-zinc-900 border-zinc-800";
-    }
-  };
-
-  const renderStatusBadge = (node: RoadmapNode) => {
-    const status = node.status || (node.is_completed ? "COMPLETED" : node.is_locked ? "LOCKED" : "AVAILABLE");
-    
-    switch (status) {
-      case "COMPLETED":
-        return (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-success-emerald font-bold uppercase px-2 py-0.5 rounded-full bg-success-emerald/10 border border-success-emerald/30">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>Completed</span>
-          </span>
-        );
-      case "IN_PROGRESS":
-        return (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-yellow-400 font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 animate-pulse">
-            <Clock className="w-3 h-3" />
-            <span>In Progress</span>
-          </span>
-        );
-      case "AVAILABLE":
-        return (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-info-cyan font-bold uppercase px-2 py-0.5 rounded-full bg-info-cyan/10 border border-info-cyan/30">
-            <Play className="w-3 h-3 fill-info-cyan" />
-            <span>Available</span>
-          </span>
-        );
-      case "LOCKED":
-      default:
-        return (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 font-bold uppercase px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800">
-            <Lock className="w-3 h-3" />
-            <span>Locked</span>
-          </span>
-        );
-    }
-  };
-
   return (
-    <div className="space-y-10 pb-16">
-      {/* Page Header */}
-      <div className="space-y-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Compass className="w-5 h-5 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Learning Roadmap</span>
-          </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 uppercase">
-            Striver A2Z DSA Sheet
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Sequential Video Learning Journey. Watch video tutorials step-by-step, mark lessons as done, and unlock your path to mastering algorithms.
-          </p>
+    <div className="space-y-6 pb-20 max-w-6xl mx-auto px-3 sm:px-6">
+      {/* 1. TOP HEADER & CONTINUE LEARNING CARD */}
+      <RoadmapHeader
+        userName={stats?.display_name || "Coder"}
+        completedLessons={completedLessonsCount}
+        totalLessons={totalLessonsCount}
+        overallProgressPct={overallProgress.progress_percentage || 0}
+        currentStepTitle={nextUnlockedInfo?.stepTitle || "Step 1: Learn the Basics"}
+        nextUnlockedLesson={nextUnlockedInfo}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        onContinueLearning={handleContinueLearning}
+      />
+
+      {/* 2. QUICK ACTIONS BAR */}
+      <RoadmapQuickActions
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
+        onJumpToCurrentStep={handleJumpToCurrentStep}
+        onResumeLastLesson={handleContinueLearning}
+        recentlyViewed={recentlyViewed}
+        onSelectRecentLesson={(id) => {
+          for (const step of nodes) {
+            for (const sec of step.children || []) {
+              for (const l of sec.children || []) {
+                if (l.id === id) {
+                  handleSelectLesson(l, step.title);
+                  handleNavigateLesson(l);
+                  return;
+                }
+              }
+            }
+          }
+        }}
+      />
+
+      {/* 3. EXPANDED FULL-WIDTH LEARNING JOURNEY */}
+      <div ref={stepContainerRef} className="space-y-4 pt-1">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-white tracking-tight">Learning Journey</h2>
+          <span className="text-xs font-semibold text-slate-400">
+            {processedNodes.length} Steps
+          </span>
         </div>
 
-        {/* Overall Topic Progress Bar */}
-        <RoadmapProgressBar
-          topicName={overallProgress.topic_name}
-          completedVideos={overallProgress.completed_videos}
-          totalVideos={overallProgress.total_videos}
-          progressPercentage={overallProgress.progress_percentage}
-          overallXp={overallProgress.overall_xp}
-        />
+        {processedNodes.length === 0 ? (
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-3">
+            <p className="text-sm font-bold text-slate-300">No lessons found</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              No step, section, or lesson matches &quot;{searchQuery}&quot;. Try clearing filters or searching for another term.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveFilter("ALL");
+              }}
+              className="mt-2 text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg hover:bg-cyan-500/20"
+            >
+              Clear Search & Filters
+            </button>
+          </div>
+        ) : (
+          processedNodes.map((step, idx) => (
+            <StepCard
+              key={step.id}
+              step={step}
+              stepIndex={idx}
+              isExpanded={Boolean(expandedNodes[step.id])}
+              expandedSections={expandedNodes}
+              onToggleStepExpand={toggleStepExpand}
+              onToggleSectionExpand={toggleSectionExpand}
+              currentLessonId={nextUnlockedInfo?.lesson.id}
+              searchQuery={searchQuery}
+              onSelectLesson={handleSelectLesson}
+              onNavigateLesson={handleNavigateLesson}
+            />
+          ))
+        )}
       </div>
 
-      {/* Explorer Tree */}
-      <div className="space-y-8 max-w-4xl mx-auto relative pl-4 md:pl-6">
-        {/* Connector Line for Steps */}
-        <div className="absolute left-0 top-6 bottom-6 w-[2px] bg-gradient-to-b from-primary/80 via-info-cyan/40 to-muted/20" />
+      {/* 4. BOTTOM SECTION: RECENTLY COMPLETED & ACHIEVEMENTS */}
+      <RecentlyCompletedSection
+        completedLessons={allCompletedLessons}
+        onSelectLesson={(lesson) => {
+          handleSelectLesson(lesson);
+          handleNavigateLesson(lesson);
+        }}
+      />
 
-        {nodes.map((step) => {
-          const isStepExpanded = expandedNodes[step.id];
-          return (
-            <div key={step.id} className="relative space-y-4">
-              {/* Step indicator node */}
-              <div className={`absolute -left-[21px] md:-left-[29px] w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs md:text-sm z-20 ${
-                step.is_completed 
-                  ? "bg-success-emerald border-success-emerald text-zinc-950" 
-                  : step.is_locked
-                    ? "bg-zinc-950 border-zinc-800 text-zinc-600"
-                    : "bg-zinc-950 border-primary text-primary shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-              }`}>
-                {step.is_completed ? "✓" : step.order_index}
-              </div>
+      <AchievementsSection />
 
-              {/* Step Card Header */}
-              <div 
-                onClick={() => toggleExpand(step.id)}
-                className={`w-full p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none transition-all duration-300 ${
-                  step.is_locked
-                    ? "bg-zinc-950/30 border-zinc-900 opacity-60 pointer-events-none"
-                    : "glass-card border-card-border hover:border-primary/40 shadow-lg shadow-black/10"
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-xp-gold uppercase font-bold">Step 0{step.order_index}</span>
-                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(step.difficulty)}`}>
-                      {step.difficulty}
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-black text-white">{step.title}</h2>
-                  <p className="text-xs text-muted-foreground max-w-xl">{step.description}</p>
-                </div>
+      {/* 5. MOBILE STICKY FLOATING CONTINUE LEARNING CTA */}
+      {nextUnlockedInfo && (
+        <div className="sm:hidden fixed bottom-4 left-4 right-4 z-40 bg-slate-950/95 border border-cyan-500/40 p-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center justify-between">
+          <div className="truncate pr-2">
+            <span className="text-[9px] font-mono text-cyan-400 uppercase font-bold block">Continue Learning</span>
+            <span className="text-xs font-bold text-white truncate block">{nextUnlockedInfo.lesson.title}</span>
+          </div>
 
-                <div className="flex items-center gap-4 self-end md:self-center">
-                  <div className="text-right">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-                      <span>PROGRESS:</span>
-                      <span className="text-xp-gold font-bold">{step.progress_percentage}%</span>
-                    </div>
-                    <div className="w-24 h-1.5 bg-zinc-950 border border-card-border rounded-full mt-1 overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-xp-gold to-yellow-500 transition-all duration-300"
-                        style={{ width: `${step.progress_percentage}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {isStepExpanded ? <ChevronDown className="w-5 h-5 text-zinc-400" /> : <ChevronRight className="w-5 h-5 text-zinc-400" />}
-                </div>
-              </div>
-
-              {/* Step Sections (collapsible) */}
-              <AnimatePresence>
-                {isStepExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden pl-4 md:pl-8 space-y-4 relative"
-                  >
-                    {/* Section Connector Line */}
-                    <div className="absolute left-1 top-2 bottom-6 w-[1px] bg-zinc-800" />
-
-                    {step.children.map((section) => {
-                      const isSectionExpanded = expandedNodes[section.id];
-                      return (
-                        <div key={section.id} className="relative space-y-3">
-                          {/* Section indicator dot */}
-                          <div className={`absolute -left-[20px] md:-left-[36px] w-3 h-3 rounded-full border z-20 ${
-                            section.is_completed
-                              ? "bg-success-emerald border-success-emerald"
-                              : section.is_locked
-                                ? "bg-zinc-950 border-zinc-800"
-                                : "bg-zinc-950 border-info-cyan shadow-[0_0_6px_rgba(6,182,212,0.4)]"
-                          }`} />
-
-                          {/* Section Header */}
-                          <div 
-                            onClick={() => toggleExpand(section.id)}
-                            className={`p-3 rounded-lg border flex items-center justify-between gap-4 cursor-pointer select-none transition-all duration-200 ${
-                              section.is_locked
-                                ? "bg-zinc-950/20 border-zinc-900/60 opacity-50"
-                                : "bg-zinc-950/40 border-card-border/80 hover:border-info-cyan/40"
-                            }`}
-                          >
-                            <div className="space-y-0.5">
-                              <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold">Section {section.order_index}</span>
-                              <h3 className="text-md font-bold text-white/90">{section.title}</h3>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-mono text-muted-foreground">
-                                {section.children?.filter(c => c.is_completed || c.status === "COMPLETED").length || 0} / {section.children?.length || 0} Lessons
-                              </span>
-                              {isSectionExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
-                            </div>
-                          </div>
-
-                          {/* Section Topics (collapsible) */}
-                          <AnimatePresence>
-                            {isSectionExpanded && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.25 }}
-                                className="overflow-hidden pl-4 md:pl-6 space-y-3 relative"
-                              >
-                                {/* Topic Connector Line */}
-                                <div className="absolute left-1 top-2 bottom-6 w-[1px] bg-zinc-800/60 border-dashed border-l border-zinc-800" />
-
-                                {section.children.map((topic) => {
-                                  const nodeStatus = topic.status || (topic.is_completed ? "COMPLETED" : topic.is_locked ? "LOCKED" : "AVAILABLE");
-                                  const isLocked = nodeStatus === "LOCKED";
-
-                                  return (
-                                    <div key={topic.id} className="relative">
-                                      {/* Topic Dot */}
-                                      <div className={`absolute -left-[20px] md:-left-[28px] w-2.5 h-2.5 rounded-full border z-20 ${
-                                        nodeStatus === "COMPLETED"
-                                          ? "bg-success-emerald border-success-emerald"
-                                          : isLocked
-                                            ? "bg-zinc-950 border-zinc-900"
-                                            : "bg-zinc-950 border-info-cyan shadow-[0_0_6px_rgba(6,182,212,0.4)]"
-                                      }`} />
-
-                                      {/* Topic Card */}
-                                      <div 
-                                        className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 ${
-                                          isLocked
-                                            ? "bg-[#06060a]/20 border-zinc-900/40 opacity-40 select-none"
-                                            : "glass-card border-card-border hover:border-zinc-700 shadow-md"
-                                        }`}
-                                      >
-                                        <div className="space-y-2 flex-1">
-                                          <div className="flex flex-wrap items-center gap-2">
-                                            <h4 className="text-sm font-bold text-white">{topic.title}</h4>
-                                            <span className={`text-[8px] font-extrabold uppercase px-1 rounded border ${getDifficultyColor(topic.difficulty)}`}>
-                                              {topic.difficulty}
-                                            </span>
-                                            {renderStatusBadge(topic)}
-                                          </div>
-                                          {topic.description && (
-                                            <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xl">
-                                              {topic.description}
-                                            </p>
-                                          )}
-
-                                          {/* Metrics Grid */}
-                                          {!isLocked && (
-                                            <div className="flex flex-wrap items-center gap-4 pt-1 border-t border-card-border/50">
-                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-                                                <Clock className="w-3 h-3 text-info-cyan" />
-                                                <span>EST: {topic.estimated_time || 15} mins</span>
-                                              </div>
-                                              <div className="flex items-center gap-1.5 text-[10px] text-xp-gold font-mono font-bold">
-                                                <Zap className="w-3 h-3 text-xp-gold" />
-                                                <span>+{topic.xp_reward} XP</span>
-                                              </div>
-                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-                                                <Video className="w-3 h-3 text-primary" />
-                                                <span>Video Tutorial Attached</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        <div className="flex items-center justify-end">
-                                          {isLocked ? (
-                                            <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-900/60 text-zinc-700">
-                                              <Lock className="w-4 h-4" />
-                                            </div>
-                                          ) : (
-                                            <Link href={`/roadmap/node/${topic.id}`}>
-                                              <button className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md shadow-primary/10 transition-all duration-200 cursor-pointer">
-                                                <Play className="w-3 h-3 fill-white" />
-                                                <span>Watch Video</span>
-                                                <ChevronRight className="w-3.5 h-3.5" />
-                                              </button>
-                                            </Link>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
+          <button
+            type="button"
+            onClick={handleContinueLearning}
+            className="px-3.5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 font-extrabold text-xs uppercase tracking-wider flex items-center space-x-1 shrink-0 shadow-md shadow-cyan-500/30 active:scale-95"
+          >
+            <span>Resume</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

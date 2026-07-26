@@ -34,223 +34,16 @@ def seed_db():
     
     db: Session = SessionLocal()
     try:
-        # Clear existing roadmap nodes & problems if any (we want to re-seed cleanly)
-        db.query(LearningResource).delete()
-        db.query(KeyConcept).delete()
-        db.query(QuizQuestion).delete()
-        db.query(Quiz).delete()
-        db.query(Problem).delete()
-        db.query(RoadmapNode).delete()
-        db.commit()
-
-        print("Seeding steps, sections, and topics...")
-        
-        # 1. Seed Steps (Campaigns)
-        steps = [
-            RoadmapNode(id="step_1", title="Step 1: Learn the Basics", slug="learn-the-basics", type="step", order_index=1, estimated_time=360, xp_reward=500, difficulty="Easy"),
-            RoadmapNode(id="step_2", title="Step 2: Learn Important Sorting Techniques", slug="learn-important-sorting-techniques", type="step", order_index=2, estimated_time=180, xp_reward=300, difficulty="Easy"),
-            RoadmapNode(id="step_3", title="Step 3: Solve Problems on Arrays [Easy -> Medium -> Hard]", slug="arrays-easy-medium-hard", type="step", order_index=3, estimated_time=720, xp_reward=1000, difficulty="Medium"),
-            RoadmapNode(id="step_4", title="Step 4: Binary Search [1D, 2D Arrays, Search Space]", slug="binary-search-arrays", type="step", order_index=4, estimated_time=600, xp_reward=800, difficulty="Medium"),
-            RoadmapNode(id="step_5", title="Step 5: Learn Strings [Easy -> Medium]", slug="learn-strings", type="step", order_index=5, estimated_time=480, xp_reward=600, difficulty="Medium"),
-        ]
-        db.add_all(steps)
-        db.commit()
-
-        # 2. Seed Sections
-        sections = [
-            # Step 1 Sections
-            RoadmapNode(id="sec_1_1", parent_id="step_1", title="Things to Know in C++/Java/Python/JS", slug="things-to-know", type="section", order_index=1, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            RoadmapNode(id="sec_1_2", parent_id="step_1", title="Build-up Logical Thinking", slug="build-up-logical-thinking", type="section", order_index=2, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            RoadmapNode(id="sec_1_3", parent_id="step_1", title="Learn STL / Collections", slug="learn-stl-collections", type="section", order_index=3, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            RoadmapNode(id="sec_1_4", parent_id="step_1", title="Know Basic Maths", slug="know-basic-maths", type="section", order_index=4, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            RoadmapNode(id="sec_1_5", parent_id="step_1", title="Learn Basic Recursion", slug="learn-basic-recursion", type="section", order_index=5, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            RoadmapNode(id="sec_1_6", parent_id="step_1", title="Learn Basic Hashing", slug="learn-basic-hashing", type="section", order_index=6, estimated_time=60, xp_reward=100, difficulty="Easy"),
-            
-            # Step 2 Sections
-            RoadmapNode(id="sec_2_1", parent_id="step_2", title="Sorting-I", slug="sorting-i", type="section", order_index=1, estimated_time=90, xp_reward=150, difficulty="Easy"),
-            RoadmapNode(id="sec_2_2", parent_id="step_2", title="Sorting-II", slug="sorting-ii", type="section", order_index=2, estimated_time=90, xp_reward=150, difficulty="Medium"),
-            
-            # Step 3 Sections
-            RoadmapNode(id="sec_3_1", parent_id="step_3", title="Arrays Easy", slug="arrays-easy", type="section", order_index=1, estimated_time=240, xp_reward=300, difficulty="Easy"),
-            RoadmapNode(id="sec_3_2", parent_id="step_3", title="Arrays Medium", slug="arrays-medium", type="section", order_index=2, estimated_time=240, xp_reward=300, difficulty="Medium"),
-            RoadmapNode(id="sec_3_3", parent_id="step_3", title="Arrays Hard", slug="arrays-hard", type="section", order_index=3, estimated_time=240, xp_reward=400, difficulty="Hard"),
-            
-            # Step 4 Sections
-            RoadmapNode(id="sec_4_1", parent_id="step_4", title="BS on 1D Arrays", slug="bs-on-1d-arrays", type="section", order_index=1, estimated_time=200, xp_reward=250, difficulty="Easy"),
-            RoadmapNode(id="sec_4_2", parent_id="step_4", title="BS on Answers", slug="bs-on-answers", type="section", order_index=2, estimated_time=200, xp_reward=300, difficulty="Medium"),
-            RoadmapNode(id="sec_4_3", parent_id="step_4", title="BS on 2D Arrays", slug="bs-on-2d-arrays", type="section", order_index=3, estimated_time=200, xp_reward=250, difficulty="Hard"),
-            
-            # Step 5 Sections
-            RoadmapNode(id="sec_5_1", parent_id="step_5", title="Strings Easy", slug="strings-easy", type="section", order_index=1, estimated_time=240, xp_reward=300, difficulty="Easy"),
-            RoadmapNode(id="sec_5_2", parent_id="step_5", title="Strings Medium", slug="strings-medium", type="section", order_index=2, estimated_time=240, xp_reward=300, difficulty="Medium"),
-        ]
-        db.add_all(sections)
-        db.commit()
-
-        # 3. Seed Topics (Concepts)
-        topics = [
-            # Step 1 - Things to Know
-            RoadmapNode(id="topic_1_1_1", parent_id="sec_1_1", title="User Input / Output", slug="user-input-output", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_2", parent_id="sec_1_1", title="Data Types", slug="data-types", type="topic", order_index=2, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_3", parent_id="sec_1_1", title="If Else Statements", slug="if-else-statements", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_4", parent_id="sec_1_1", title="Switch Statement", slug="switch-statement", type="topic", order_index=4, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_5", parent_id="sec_1_1", title="Arrays & Strings Basics", slug="arrays-strings-basics", type="topic", order_index=5, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_6", parent_id="sec_1_1", title="Loops Basics", slug="loops-basics", type="topic", order_index=6, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_7", parent_id="sec_1_1", title="Functions Basics", slug="functions-basics", type="topic", order_index=7, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_1_8", parent_id="sec_1_1", title="Time & Space Complexity", slug="time-space-complexity", type="topic", order_index=8, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            
-            # Step 1 - Logical Thinking
-            RoadmapNode(id="topic_1_2_1", parent_id="sec_1_2", title="Pattern Problems", slug="pattern-problems", type="topic", order_index=1, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            
-            # Step 1 - STL/Collections
-            RoadmapNode(id="topic_1_3_1", parent_id="sec_1_3", title="C++ STL / Java Collections", slug="cpp-stl-collections", type="topic", order_index=1, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            
-            # Step 1 - Basic Maths
-            RoadmapNode(id="topic_1_4_1", parent_id="sec_1_4", title="Count Digits", slug="count-digits", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_2", parent_id="sec_1_4", title="Reverse a Number", slug="reverse-number", type="topic", order_index=2, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_3", parent_id="sec_1_4", title="Palindrome Number", slug="palindrome-number", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_4", parent_id="sec_1_4", title="GCD or HCF", slug="gcd-or-hcf", type="topic", order_index=4, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_5", parent_id="sec_1_4", title="Armstrong Number", slug="armstrong-number", type="topic", order_index=5, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_6", parent_id="sec_1_4", title="Print all Divisors", slug="print-all-divisors", type="topic", order_index=6, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_4_7", parent_id="sec_1_4", title="Prime Numbers", slug="prime-numbers", type="topic", order_index=7, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            
-            # Step 1 - Basic Recursion
-            RoadmapNode(id="topic_1_5_1", parent_id="sec_1_5", title="Print Name N Times", slug="print-name-n-times", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_2", parent_id="sec_1_5", title="Print 1 to N", slug="print-1-to-n", type="topic", order_index=2, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_3", parent_id="sec_1_5", title="Print N to 1", slug="print-n-to-1", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_4", parent_id="sec_1_5", title="Sum of N numbers", slug="sum-of-n-numbers", type="topic", order_index=4, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_5", parent_id="sec_1_5", title="Factorial of N", slug="factorial-of-n", type="topic", order_index=5, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_6", parent_id="sec_1_5", title="Reverse an Array", slug="reverse-an-array", type="topic", order_index=6, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_7", parent_id="sec_1_5", title="Check Palindrome String", slug="check-palindrome-string", type="topic", order_index=7, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_5_8", parent_id="sec_1_5", title="Fibonacci Number", slug="fibonacci-number", type="topic", order_index=8, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            
-            # Step 1 - Basic Hashing
-            RoadmapNode(id="topic_1_6_1", parent_id="sec_1_6", title="Number Hashing", slug="number-hashing", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_6_2", parent_id="sec_1_6", title="Character Hashing", slug="character-hashing", type="topic", order_index=2, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_1_6_3", parent_id="sec_1_6", title="Frequency Count", slug="frequency-count", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            
-            # Step 2 - Sorting-I
-            RoadmapNode(id="topic_2_1_1", parent_id="sec_2_1", title="Selection Sort", slug="selection-sort", type="topic", order_index=1, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_2_1_2", parent_id="sec_2_1", title="Bubble Sort", slug="bubble-sort-topic", type="topic", order_index=2, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_2_1_3", parent_id="sec_2_1", title="Insertion Sort", slug="insertion-sort", type="topic", order_index=3, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            
-            # Step 2 - Sorting-II
-            RoadmapNode(id="topic_2_2_1", parent_id="sec_2_2", title="Merge Sort", slug="merge-sort", type="topic", order_index=1, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_2_2_2", parent_id="sec_2_2", title="Quick Sort", slug="quick-sort-topic", type="topic", order_index=2, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_2_2_3", parent_id="sec_2_2", title="Recursive Bubble Sort", slug="recursive-bubble-sort", type="topic", order_index=3, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_2_2_4", parent_id="sec_2_2", title="Recursive Insertion Sort", slug="recursive-insertion-sort", type="topic", order_index=4, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            
-            # Step 3 - Arrays Easy
-            RoadmapNode(id="topic_3_1_1", parent_id="sec_3_1", title="Largest Element in Array", slug="largest-element", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_2", parent_id="sec_3_1", title="Second Largest Element", slug="second-largest-element", type="topic", order_index=2, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_3", parent_id="sec_3_1", title="Check if Array is Sorted", slug="check-if-sorted", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_4", parent_id="sec_3_1", title="Remove Duplicates", slug="remove-duplicates", type="topic", order_index=4, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_5", parent_id="sec_3_1", title="Left Rotate by One", slug="left-rotate-by-one", type="topic", order_index=5, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_6", parent_id="sec_3_1", title="Left Rotate by D Places", slug="left-rotate-by-d-places", type="topic", order_index=6, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_7", parent_id="sec_3_1", title="Move Zeros to End", slug="move-zeros-to-end", type="topic", order_index=7, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_8", parent_id="sec_3_1", title="Linear Search", slug="linear-search", type="topic", order_index=8, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_9", parent_id="sec_3_1", title="Find Union", slug="find-union", type="topic", order_index=9, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_10", parent_id="sec_3_1", title="Find Missing Number", slug="find-missing-number", type="topic", order_index=10, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_11", parent_id="sec_3_1", title="Maximum Consecutive Ones", slug="maximum-consecutive-ones", type="topic", order_index=11, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_12", parent_id="sec_3_1", title="Find Number that Appears Once", slug="find-single-number", type="topic", order_index=12, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_3_1_13", parent_id="sec_3_1", title="Longest Subarray with Sum K", slug="longest-subarray-sum-k", type="topic", order_index=13, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            
-            # Step 3 - Arrays Medium
-            RoadmapNode(id="topic_3_2_1", parent_id="sec_3_2", title="Two Sum", slug="two-sum-topic", type="topic", order_index=1, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_2", parent_id="sec_3_2", title="Sort 0s 1s 2s", slug="sort-zeros-ones-twos", type="topic", order_index=2, estimated_time=20, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_3", parent_id="sec_3_2", title="Majority Element (>N/2)", slug="majority-element-n-2", type="topic", order_index=3, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_4", parent_id="sec_3_2", title="Kadane's Algorithm (Max Subarray)", slug="kadanes-algorithm", type="topic", order_index=4, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_5", parent_id="sec_3_2", title="Print Subarray with Max Sum", slug="print-max-subarray", type="topic", order_index=5, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_6", parent_id="sec_3_2", title="Best Time to Buy & Sell Stock", slug="buy-sell-stock", type="topic", order_index=6, estimated_time=20, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_7", parent_id="sec_3_2", title="Rearrange Array Elements by Sign", slug="rearrange-array-sign", type="topic", order_index=7, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_8", parent_id="sec_3_2", title="Next Permutation", slug="next-permutation", type="topic", order_index=8, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_9", parent_id="sec_3_2", title="Leaders in an Array", slug="leaders-in-array", type="topic", order_index=9, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_10", parent_id="sec_3_2", title="Longest Consecutive Sequence", slug="longest-consecutive-sequence", type="topic", order_index=10, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_11", parent_id="sec_3_2", title="Set Matrix Zeros", slug="set-matrix-zeros", type="topic", order_index=11, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_12", parent_id="sec_3_2", title="Rotate Matrix by 90 Degrees", slug="rotate-matrix-90", type="topic", order_index=12, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_13", parent_id="sec_3_2", title="Spiral Matrix", slug="spiral-matrix", type="topic", order_index=13, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_3_2_14", parent_id="sec_3_2", title="Subarray Sum Equals K", slug="subarray-sum-k", type="topic", order_index=14, estimated_time=40, xp_reward=100, difficulty="Medium"),
-            
-            # Step 3 - Arrays Hard
-            RoadmapNode(id="topic_3_3_1", parent_id="sec_3_3", title="Pascal's Triangle", slug="pascals-triangle", type="topic", order_index=1, estimated_time=30, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_2", parent_id="sec_3_3", title="Majority Element (>N/3)", slug="majority-element-n-3", type="topic", order_index=2, estimated_time=30, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_3", parent_id="sec_3_3", title="Three Sum", slug="three-sum", type="topic", order_index=3, estimated_time=45, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_4", parent_id="sec_3_3", title="Four Sum", slug="four-sum", type="topic", order_index=4, estimated_time=45, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_5", parent_id="sec_3_3", title="Longest Subarray with 0 Sum", slug="longest-subarray-zero-sum", type="topic", order_index=5, estimated_time=30, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_6", parent_id="sec_3_3", title="Subarrays with XOR K", slug="subarrays-xor-k", type="topic", order_index=6, estimated_time=40, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_7", parent_id="sec_3_3", title="Merge Overlapping Subintervals", slug="merge-intervals", type="topic", order_index=7, estimated_time=35, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_8", parent_id="sec_3_3", title="Merge Sorted Arrays Without Space", slug="merge-sorted-arrays", type="topic", order_index=8, estimated_time=40, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_9", parent_id="sec_3_3", title="Find Missing & Repeating Numbers", slug="find-missing-repeating", type="topic", order_index=9, estimated_time=30, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_10", parent_id="sec_3_3", title="Count Inversions", slug="count-inversions", type="topic", order_index=10, estimated_time=45, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_11", parent_id="sec_3_3", title="Reverse Pairs", slug="reverse-pairs", type="topic", order_index=11, estimated_time=45, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_3_3_12", parent_id="sec_3_3", title="Maximum Product Subarray", slug="maximum-product-subarray", type="topic", order_index=12, estimated_time=35, xp_reward=150, difficulty="Hard"),
-            
-            # Step 4 - BS on 1D
-            RoadmapNode(id="topic_4_1_1", parent_id="sec_4_1", title="Binary Search", slug="binary-search-topic", type="topic", order_index=1, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_2", parent_id="sec_4_1", title="Implement Lower / Upper Bound", slug="lower-upper-bound", type="topic", order_index=2, estimated_time=25, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_3", parent_id="sec_4_1", title="Search Insert Position", slug="search-insert-position", type="topic", order_index=3, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_4", parent_id="sec_4_1", title="Floor / Ceil in Sorted Array", slug="floor-ceil-sorted", type="topic", order_index=4, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_5", parent_id="sec_4_1", title="First & Last Occurrences", slug="first-last-occurrences", type="topic", order_index=5, estimated_time=25, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_6", parent_id="sec_4_1", title="Count Occurrences in Sorted Array", slug="count-occurrences", type="topic", order_index=6, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_7", parent_id="sec_4_1", title="Search in Rotated Sorted Array I / II", slug="search-rotated-array", type="topic", order_index=7, estimated_time=40, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_8", parent_id="sec_4_1", title="Find Minimum in Rotated Sorted Array", slug="find-min-rotated", type="topic", order_index=8, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_9", parent_id="sec_4_1", title="Find Rotation Count", slug="find-rotation-count", type="topic", order_index=9, estimated_time=25, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_10", parent_id="sec_4_1", title="Single Element in Sorted Array", slug="single-element-sorted", type="topic", order_index=10, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_4_1_11", parent_id="sec_4_1", title="Find Peak Element", slug="find-peak-element", type="topic", order_index=11, estimated_time=30, xp_reward=50, difficulty="Easy"),
-            
-            # Step 4 - BS on Answers
-            RoadmapNode(id="topic_4_2_1", parent_id="sec_4_2", title="Square Root of a Number", slug="square-root-bs", type="topic", order_index=1, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_2", parent_id="sec_4_2", title="Nth Root of a Number", slug="nth-root-bs", type="topic", order_index=2, estimated_time=25, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_3", parent_id="sec_4_2", title="Koko Eating Bananas", slug="koko-eating-bananas", type="topic", order_index=3, estimated_time=40, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_4", parent_id="sec_4_2", title="Minimum days to make M Bouquets", slug="min-days-bouquets", type="topic", order_index=4, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_5", parent_id="sec_4_2", title="Find the Smallest Divisor", slug="smallest-divisor-threshold", type="topic", order_index=5, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_6", parent_id="sec_4_2", title="Capacity to Ship Packages", slug="ship-packages-d-days", type="topic", order_index=6, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_7", parent_id="sec_4_2", title="Kth Missing Positive Number", slug="kth-missing-positive", type="topic", order_index=7, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_8", parent_id="sec_4_2", title="Aggressive Cows", slug="aggressive-cows", type="topic", order_index=8, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_9", parent_id="sec_4_2", title="Book Allocation Problem", slug="book-allocation", type="topic", order_index=9, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_10", parent_id="sec_4_2", title="Split Array Largest Sum", slug="split-array-largest-sum", type="topic", order_index=10, estimated_time=40, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_11", parent_id="sec_4_2", title="Painter's Partition", slug="painters-partition", type="topic", order_index=11, estimated_time=40, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_12", parent_id="sec_4_2", title="Minimise Max Distance to Gas Station", slug="minimize-max-distance-gas", type="topic", order_index=12, estimated_time=50, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_13", parent_id="sec_4_2", title="Median of Two Sorted Arrays", slug="median-two-sorted-arrays", type="topic", order_index=13, estimated_time=50, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_4_2_14", parent_id="sec_4_2", title="K-th Element of Two Sorted Arrays", slug="kth-element-two-sorted", type="topic", order_index=14, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            
-            # Step 4 - BS on 2D
-            RoadmapNode(id="topic_4_3_1", parent_id="sec_4_3", title="Find Row with Max 1s", slug="row-max-ones", type="topic", order_index=1, estimated_time=25, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_4_3_2", parent_id="sec_4_3", title="Search in a 2D Matrix I / II", slug="search-2d-matrix", type="topic", order_index=2, estimated_time=35, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_4_3_3", parent_id="sec_4_3", title="Find Peak Element in 2D Matrix", slug="peak-element-2d", type="topic", order_index=3, estimated_time=40, xp_reward=150, difficulty="Hard"),
-            RoadmapNode(id="topic_4_3_4", parent_id="sec_4_3", title="Median of Row-wise Sorted Matrix", slug="median-matrix", type="topic", order_index=4, estimated_time=45, xp_reward=150, difficulty="Hard"),
-            
-            # Step 5 - Strings Easy
-            RoadmapNode(id="topic_5_1_1", parent_id="sec_5_1", title="Remove Outermost Parentheses", slug="remove-outermost-parentheses", type="topic", order_index=1, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_2", parent_id="sec_5_1", title="Reverse Words in String", slug="reverse-words-string", type="topic", order_index=2, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_3", parent_id="sec_5_1", title="Largest Odd Number in String", slug="largest-odd-number", type="topic", order_index=3, estimated_time=15, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_4", parent_id="sec_5_1", title="Longest Common Prefix", slug="longest-common-prefix", type="topic", order_index=4, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_5", parent_id="sec_5_1", title="Isomorphic Strings", slug="isomorphic-strings", type="topic", order_index=5, estimated_time=25, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_6", parent_id="sec_5_1", title="Check if String is Rotation", slug="string-rotations", type="topic", order_index=6, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            RoadmapNode(id="topic_5_1_7", parent_id="sec_5_1", title="Valid Anagram", slug="valid-anagram-topic", type="topic", order_index=7, estimated_time=20, xp_reward=50, difficulty="Easy"),
-            
-            # Step 5 - Strings Medium
-            RoadmapNode(id="topic_5_2_1", parent_id="sec_5_2", title="Sort Characters by Frequency", slug="sort-characters-frequency", type="topic", order_index=1, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_2", parent_id="sec_5_2", title="Maximum Nesting Depth of Parentheses", slug="max-nesting-depth", type="topic", order_index=2, estimated_time=20, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_3", parent_id="sec_5_2", title="Roman to Integer / Integer to Roman", slug="roman-integer-conversion", type="topic", order_index=3, estimated_time=30, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_4", parent_id="sec_5_2", title="Implement Atoi", slug="implement-atoi", type="topic", order_index=4, estimated_time=35, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_5", parent_id="sec_5_2", title="Count substrings with K distinct characters", slug="substrings-k-distinct", type="topic", order_index=5, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_6", parent_id="sec_5_2", title="Longest Palindromic Substring", slug="longest-palindromic-substring", type="topic", order_index=6, estimated_time=45, xp_reward=100, difficulty="Medium"),
-        ]
-
-        db.add_all(topics)
-        db.commit()
-
-        # Automatically import and match official Striver A2Z YouTube videos
-        importer = StriverVideoImporter(db=db, force=True)
-        importer.run_import()
+        # Import and sync full 18-Step Striver Curriculum
+        import sync_all_striver_steps
+        sync_all_striver_steps.run_sync()
 
         print("Seeding problems...")
         problems = [
             # Two Sum under Arrays Medium -> Two Sum Topic
             Problem(
                 id="two-sum",
-                parent_id="topic_3_2_1",
+                parent_id="topic_sec_3_2_1",
                 title="Two Sum",
                 slug="two-sum",
                 type="problem",
@@ -271,7 +64,7 @@ def seed_db():
             # Max Subarray under Arrays Medium -> Kadane's Topic
             Problem(
                 id="max-subarray",
-                parent_id="topic_3_2_4",
+                parent_id="topic_sec_3_2_4",
                 title="Maximum Subarray (Kadane's)",
                 slug="maximum-subarray",
                 type="problem",
@@ -292,7 +85,7 @@ def seed_db():
             # Bubble Sort under Sorting-I -> Bubble Sort Topic
             Problem(
                 id="bubble-sort",
-                parent_id="topic_2_1_2",
+                parent_id="topic_sec_2_1_1",
                 title="Bubble Sort Implementation",
                 slug="bubble-sort",
                 type="problem",
@@ -313,7 +106,7 @@ def seed_db():
             # Quick Sort under Sorting-II -> Quick Sort Topic
             Problem(
                 id="quick-sort",
-                parent_id="topic_2_2_2",
+                parent_id="topic_sec_2_2_2",
                 title="Quick Sort Implementation",
                 slug="quick-sort",
                 type="problem",
@@ -334,7 +127,7 @@ def seed_db():
             # Binary Search under BS 1D -> Binary Search Topic
             Problem(
                 id="binary-search-problem",
-                parent_id="topic_4_1_1",
+                parent_id="topic_sec_4_1_1",
                 title="Binary Search",
                 slug="binary-search",
                 type="problem",
@@ -355,7 +148,7 @@ def seed_db():
             # Valid Anagram under Strings Easy -> Valid Anagram Topic
             Problem(
                 id="valid-anagram",
-                parent_id="topic_5_1_7",
+                parent_id="topic_sec_5_1_3",
                 title="Valid Anagram",
                 slug="valid-anagram",
                 type="problem",
