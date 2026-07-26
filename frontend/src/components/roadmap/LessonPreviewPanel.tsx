@@ -3,14 +3,11 @@ import Link from "next/link";
 import {
   Video,
   Play,
-  Clock,
   Zap,
   CheckCircle2,
   Lock,
   ChevronRight,
-  Sparkles,
-  BookOpen,
-  HelpCircle
+  BookOpen
 } from "lucide-react";
 
 export interface PreviewLessonData {
@@ -45,7 +42,7 @@ export function LessonPreviewPanel({ lesson }: LessonPreviewPanelProps) {
         </div>
         <h3 className="text-sm font-bold text-slate-300">Select Any Lesson</h3>
         <p className="text-xs max-w-xs text-slate-500 leading-relaxed">
-          Hover or click on any lesson in the curriculum roadmap to preview its video stream, estimated duration, XP rewards, and prerequisites.
+          Hover or click on any lesson in the curriculum roadmap to preview its video stream and XP rewards.
         </p>
       </div>
     );
@@ -110,7 +107,7 @@ export function LessonPreviewPanel({ lesson }: LessonPreviewPanelProps) {
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
             <Video className="w-8 h-8" />
-            <span className="text-xs font-semibold">Video Tutorial Available</span>
+            <span className="text-xs font-semibold">Video Tutorial</span>
           </div>
         )}
 
@@ -129,15 +126,7 @@ export function LessonPreviewPanel({ lesson }: LessonPreviewPanelProps) {
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 text-xs">
-        <div>
-          <span className="text-slate-500 block text-[10px] font-semibold uppercase">Duration</span>
-          <div className="flex items-center space-x-1 text-slate-200 font-bold mt-0.5">
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{lesson.duration || 15}m</span>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-2 gap-2 bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 text-xs">
         <div>
           <span className="text-slate-500 block text-[10px] font-semibold uppercase">Reward</span>
           <div className="flex items-center space-x-1 text-amber-400 font-bold mt-0.5">

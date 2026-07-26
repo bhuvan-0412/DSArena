@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { Tv, FileText, Bookmark, Lightbulb, BookOpen, ChevronDown } from "lucide-react";
+import { Tv, FileText, BookOpen, ChevronDown } from "lucide-react";
 
-export type LessonTabType = "learn" | "notes" | "takeaways" | "tips" | "resources";
+export type LessonTabType = "learn" | "notes" | "resources";
 
 interface LessonTabsProps {
   activeTab: LessonTabType;
   onTabChange: (tab: LessonTabType) => void;
   learnContent: React.ReactNode;
   notesContent: React.ReactNode;
-  takeawaysContent: React.ReactNode;
-  tipsContent: React.ReactNode;
   resourcesContent: React.ReactNode;
 }
 
@@ -20,16 +18,12 @@ export function LessonTabs({
   onTabChange,
   learnContent,
   notesContent,
-  takeawaysContent,
-  tipsContent,
   resourcesContent,
 }: LessonTabsProps) {
   // State for mobile accordion expand/collapse
   const [expandedMobile, setExpandedMobile] = useState<Record<LessonTabType, boolean>>({
     learn: true,
     notes: false,
-    takeaways: false,
-    tips: false,
     resources: false,
   });
 
@@ -40,8 +34,6 @@ export function LessonTabs({
   const tabsConfig: { id: LessonTabType; label: string; icon: React.ReactNode }[] = [
     { id: "learn", label: "Learn", icon: <Tv className="w-4 h-4" /> },
     { id: "notes", label: "Notes", icon: <FileText className="w-4 h-4" /> },
-    { id: "takeaways", label: "Key Takeaways", icon: <Bookmark className="w-4 h-4" /> },
-    { id: "tips", label: "Tips", icon: <Lightbulb className="w-4 h-4" /> },
     { id: "resources", label: "Resources", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
@@ -51,10 +43,6 @@ export function LessonTabs({
         return learnContent;
       case "notes":
         return notesContent;
-      case "takeaways":
-        return takeawaysContent;
-      case "tips":
-        return tipsContent;
       case "resources":
         return resourcesContent;
       default:

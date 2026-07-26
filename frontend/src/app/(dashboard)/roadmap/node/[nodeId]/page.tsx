@@ -8,8 +8,6 @@ import Link from "next/link";
 
 import { VideoPlayer } from "@/components/roadmap/VideoPlayer";
 import { LessonHeader } from "@/components/roadmap/LessonHeader";
-import { LearningObjectivesCard } from "@/components/roadmap/LearningObjectivesCard";
-import { PrerequisiteCard, PrerequisiteItem } from "@/components/roadmap/PrerequisiteCard";
 import { ProgressCard } from "@/components/roadmap/ProgressCard";
 import { LessonSidebar, SidebarLessonNode } from "@/components/roadmap/LessonSidebar";
 import { LessonNavigation, NavigationNode } from "@/components/roadmap/LessonNavigation";
@@ -18,8 +16,6 @@ import { CompletionDialog } from "@/components/roadmap/CompletionDialog";
 
 import { LessonTabs, LessonTabType } from "@/components/roadmap/LessonTabs";
 import { NotesPanel } from "@/components/roadmap/NotesPanel";
-import { SummaryCard, TakeawaysData } from "@/components/roadmap/SummaryCard";
-import { TipCard, TipsData } from "@/components/roadmap/TipCard";
 import { ResourceCard, ResourceItem } from "@/components/roadmap/ResourceCard";
 import { RoadmapBreadcrumbs } from "@/components/roadmap/RoadmapBreadcrumbs";
 
@@ -38,7 +34,7 @@ interface NodeData {
   is_locked: boolean;
   status: string;
   prerequisites?: string[];
-  prerequisites_details?: PrerequisiteItem[];
+  prerequisites_details?: any[];
   learning_objectives?: {
     what_you_will_learn?: string[];
     why_this_topic_matters?: string | null;
@@ -58,8 +54,6 @@ interface NodeData {
 
 interface HubData {
   notes?: { id: number; node_id: string; content: string; updated_at?: string | null };
-  takeaways?: TakeawaysData;
-  tips?: TipsData;
   resources?: ResourceItem[];
 }
 
@@ -282,26 +276,14 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
   const isCompleted = node.status === "COMPLETED" || Boolean(node.progress?.completed);
 
-  // Tab 1 Learn Content Node
+  // Tab 1 Learn Content Node (Video Player only)
   const learnTabContent = (
-    <div className="space-y-6">
-      {/* Video Player */}
-      <VideoPlayer
-        youtubeUrl={node.youtube_url}
-        videoId={node.youtube_video_id}
-        thumbnailUrl={node.thumbnail_url}
-        title={node.title}
-      />
-
-      {/* Learning Objectives */}
-      <LearningObjectivesCard
-        objectives={node.learning_objectives}
-        lessonTitle={node.title}
-      />
-
-      {/* Prerequisites */}
-      <PrerequisiteCard prerequisites={node.prerequisites_details} />
-    </div>
+    <VideoPlayer
+      youtubeUrl={node.youtube_url}
+      videoId={node.youtube_video_id}
+      thumbnailUrl={node.thumbnail_url}
+      title={node.title}
+    />
   );
 
   // Tab 2 Notes Content Node
@@ -314,17 +296,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
     />
   );
 
-  // Tab 3 Key Takeaways Content Node
-  const takeawaysTabContent = (
-    <SummaryCard takeaways={hubData?.takeaways} lessonTitle={node.title} />
-  );
-
-  // Tab 4 Tips Content Node
-  const tipsTabContent = (
-    <TipCard tips={hubData?.tips} lessonTitle={node.title} />
-  );
-
-  // Tab 5 Resources Content Node
+  // Tab 3 Resources Content Node
   const resourcesTabContent = (
     <ResourceCard resources={hubData?.resources} />
   );
@@ -359,15 +331,13 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
       {/* Two Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* LEFT COLUMN: 5-Tab Knowledge Hub (Learn, Notes, Takeaways, Tips, Resources) */}
+        {/* LEFT COLUMN: 3-Tab Knowledge Hub (Learn, Notes, Resources) */}
         <div className="lg:col-span-2 space-y-6">
           <LessonTabs
             activeTab={activeTab}
             onTabChange={(tab) => setActiveTab(tab)}
             learnContent={learnTabContent}
             notesContent={notesTabContent}
-            takeawaysContent={takeawaysTabContent}
-            tipsContent={tipsTabContent}
             resourcesContent={resourcesTabContent}
           />
         </div>
@@ -389,8 +359,6 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             completedCount={progressStats.completedVideos}
             totalCount={progressStats.totalVideos}
             progressPercentage={progressStats.progressPercentage}
-            estimatedTimeMins={node.estimated_duration}
-            lessonStatus={node.status}
           />
 
           {/* Quick Notes Widget */}

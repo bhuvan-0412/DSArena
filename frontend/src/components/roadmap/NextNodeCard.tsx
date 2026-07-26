@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, CheckCircle2, Play, Clock } from "lucide-react";
+import { ChevronRight, CheckCircle2, Play } from "lucide-react";
 
 interface NextNodeInfo {
   id: string;
@@ -78,10 +78,6 @@ export function NextNodeCard({
 
         <div className="space-y-1 flex-1">
           <h4 className="text-base font-bold text-white leading-tight">{nextNode.title}</h4>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-            <Clock className="w-3 h-3" />
-            <span>EST: {nextNode.estimated_duration || 15} mins</span>
-          </div>
         </div>
 
         <button
