@@ -3,24 +3,21 @@
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { 
-  Award, 
   Compass, 
   Play, 
   CheckCircle2, 
   ChevronRight, 
   ChevronDown, 
   Lock, 
-  BookOpen, 
   Loader2, 
   Clock, 
-  ShieldAlert, 
   Zap, 
-  FileQuestion,
   TrendingUp,
-  AlertCircle
+  Video
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { RoadmapProgressBar } from "@/components/roadmap/RoadmapProgressBar";
 
 interface RoadmapNode {
   id: string;
@@ -33,6 +30,7 @@ interface RoadmapNode {
   estimated_time?: number;
   xp_reward: number;
   difficulty?: string;
+  status?: string;
   
   is_completed: boolean;
   is_locked: boolean;
@@ -46,38 +44,63 @@ interface RoadmapNode {
   children: RoadmapNode[];
 }
 
+interface OverallProgress {
+  topic_name: string;
+  completed_videos: number;
+  total_videos: number;
+  progress_percentage: number;
+  overall_xp: number;
+}
+
 const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 export default function RoadmapPage() {
   const { stats, isLoaded } = useAuthUser();
   const [nodes, setNodes] = useState<RoadmapNode[]>([]);
+  const [overallProgress, setOverallProgress] = useState<OverallProgress>({
+    topic_name: "Striver A2Z DSA Roadmap",
+    completed_videos: 0,
+    total_videos: 0,
+    progress_percentage: 0,
+    overall_xp: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!isLoaded) return;
     
-    async function fetchRoadmap() {
+    async function fetchRoadmapData() {
       try {
         setLoading(true);
         const clerkId = stats?.clerk_id || "mock_user_striver";
-        const res = await fetch(`${BACKEND_URL}/roadmap/nodes?clerk_id=${clerkId}`);
-        if (res.ok) {
-          const data = await res.json();
+        
+        const [nodesRes, progRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/roadmap/nodes?clerk_id=${clerkId}`),
+          fetch(`${BACKEND_URL}/roadmap/progress?clerk_id=${clerkId}`),
+        ]);
+
+        if (nodesRes.ok) {
+          const data = await nodesRes.json();
           setNodes(data);
           
-          // Auto-expand the active path (up to the first incomplete node)
+          // Auto-expand active path
           const autoExpanded = getAutoExpandedNodes(data);
           setExpandedNodes(autoExpanded);
         }
+
+        if (progRes.ok) {
+          const pData = await progRes.json();
+          setOverallProgress(pData);
+        }
       } catch (err) {
-        console.error("Error fetching roadmap tree:", err);
+        console.error("Error fetching roadmap data:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchRoadmap();
+    fetchRoadmapData();
   }, [isLoaded, stats?.clerk_id]);
 
   const getAutoExpandedNodes = (nodeList: RoadmapNode[]): Record<string, boolean> => {
@@ -85,13 +108,11 @@ export default function RoadmapPage() {
     
     const traverse = (list: RoadmapNode[]): boolean => {
       for (const node of list) {
-        // Expand steps by default
         if (node.type === "step") {
           expanded[node.id] = true;
         }
 
         if (!node.is_completed) {
-          // Expand the first incomplete topic and its ancestors
           expanded[node.id] = true;
           if (node.parent_id) {
             expanded[node.parent_id] = true;
@@ -125,7 +146,7 @@ export default function RoadmapPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground font-mono">RETRIEVING learning paths...</p>
+        <p className="text-sm text-muted-foreground font-mono">RETRIEVING video learning paths...</p>
       </div>
     );
   }
@@ -140,32 +161,79 @@ export default function RoadmapPage() {
     }
   };
 
+  const renderStatusBadge = (node: RoadmapNode) => {
+    const status = node.status || (node.is_completed ? "COMPLETED" : node.is_locked ? "LOCKED" : "AVAILABLE");
+    
+    switch (status) {
+      case "COMPLETED":
+        return (
+          <span className="flex items-center gap-1 text-[10px] font-mono text-success-emerald font-bold uppercase px-2 py-0.5 rounded-full bg-success-emerald/10 border border-success-emerald/30">
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Completed</span>
+          </span>
+        );
+      case "IN_PROGRESS":
+        return (
+          <span className="flex items-center gap-1 text-[10px] font-mono text-yellow-400 font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 animate-pulse">
+            <Clock className="w-3 h-3" />
+            <span>In Progress</span>
+          </span>
+        );
+      case "AVAILABLE":
+        return (
+          <span className="flex items-center gap-1 text-[10px] font-mono text-info-cyan font-bold uppercase px-2 py-0.5 rounded-full bg-info-cyan/10 border border-info-cyan/30">
+            <Play className="w-3 h-3 fill-info-cyan" />
+            <span>Available</span>
+          </span>
+        );
+      case "LOCKED":
+      default:
+        return (
+          <span className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 font-bold uppercase px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800">
+            <Lock className="w-3 h-3" />
+            <span>Locked</span>
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-10 pb-16">
       {/* Page Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Compass className="w-5 h-5 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Learning Roadmap</span>
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Compass className="w-5 h-5 text-primary" />
+            <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Learning Roadmap</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 uppercase">
+            Striver A2Z DSA Sheet
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Sequential Video Learning Journey. Watch video tutorials step-by-step, mark lessons as done, and unlock your path to mastering algorithms.
+          </p>
         </div>
-        <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 uppercase">
-          Striver A2Z Sheet
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Redesigned gaming-inspired learning tree. Master steps sequentially, conquer daily concept challenges, and earn XP.
-        </p>
+
+        {/* Overall Topic Progress Bar */}
+        <RoadmapProgressBar
+          topicName={overallProgress.topic_name}
+          completedVideos={overallProgress.completed_videos}
+          totalVideos={overallProgress.total_videos}
+          progressPercentage={overallProgress.progress_percentage}
+          overallXp={overallProgress.overall_xp}
+        />
       </div>
 
       {/* Explorer Tree */}
       <div className="space-y-8 max-w-4xl mx-auto relative pl-4 md:pl-6">
-        {/* Beautiful Left Connector Line for Steps */}
+        {/* Connector Line for Steps */}
         <div className="absolute left-0 top-6 bottom-6 w-[2px] bg-gradient-to-b from-primary/80 via-info-cyan/40 to-muted/20" />
 
         {nodes.map((step) => {
           const isStepExpanded = expandedNodes[step.id];
           return (
             <div key={step.id} className="relative space-y-4">
-              {/* Step indicator node on the line */}
+              {/* Step indicator node */}
               <div className={`absolute -left-[21px] md:-left-[29px] w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs md:text-sm z-20 ${
                 step.is_completed 
                   ? "bg-success-emerald border-success-emerald text-zinc-950" 
@@ -256,7 +324,7 @@ export default function RoadmapPage() {
 
                             <div className="flex items-center gap-3">
                               <span className="text-xs font-mono text-muted-foreground">
-                                {section.problems_solved} / {section.total_problems} Solved
+                                {section.children?.filter(c => c.is_completed || c.status === "COMPLETED").length || 0} / {section.children?.length || 0} Lessons
                               </span>
                               {isSectionExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
                             </div>
@@ -276,23 +344,26 @@ export default function RoadmapPage() {
                                 <div className="absolute left-1 top-2 bottom-6 w-[1px] bg-zinc-800/60 border-dashed border-l border-zinc-800" />
 
                                 {section.children.map((topic) => {
+                                  const nodeStatus = topic.status || (topic.is_completed ? "COMPLETED" : topic.is_locked ? "LOCKED" : "AVAILABLE");
+                                  const isLocked = nodeStatus === "LOCKED";
+
                                   return (
                                     <div key={topic.id} className="relative">
                                       {/* Topic Dot */}
                                       <div className={`absolute -left-[20px] md:-left-[28px] w-2.5 h-2.5 rounded-full border z-20 ${
-                                        topic.is_completed
+                                        nodeStatus === "COMPLETED"
                                           ? "bg-success-emerald border-success-emerald"
-                                          : topic.is_locked
+                                          : isLocked
                                             ? "bg-zinc-950 border-zinc-900"
-                                            : "bg-zinc-950 border-zinc-700"
+                                            : "bg-zinc-950 border-info-cyan shadow-[0_0_6px_rgba(6,182,212,0.4)]"
                                       }`} />
 
                                       {/* Topic Card */}
                                       <div 
                                         className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 ${
-                                          topic.is_locked
+                                          isLocked
                                             ? "bg-[#06060a]/20 border-zinc-900/40 opacity-40 select-none"
-                                            : "glass-card border-card-border hover:border-zinc-700"
+                                            : "glass-card border-card-border hover:border-zinc-700 shadow-md"
                                         }`}
                                       >
                                         <div className="space-y-2 flex-1">
@@ -301,11 +372,7 @@ export default function RoadmapPage() {
                                             <span className={`text-[8px] font-extrabold uppercase px-1 rounded border ${getDifficultyColor(topic.difficulty)}`}>
                                               {topic.difficulty}
                                             </span>
-                                            {topic.is_completed && (
-                                              <span className="flex items-center gap-0.5 text-[9px] font-mono text-success-emerald font-bold uppercase">
-                                                ✓ Completed
-                                              </span>
-                                            )}
+                                            {renderStatusBadge(topic)}
                                           </div>
                                           {topic.description && (
                                             <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xl">
@@ -314,48 +381,34 @@ export default function RoadmapPage() {
                                           )}
 
                                           {/* Metrics Grid */}
-                                          {!topic.is_locked && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-card-border/50">
+                                          {!isLocked && (
+                                            <div className="flex flex-wrap items-center gap-4 pt-1 border-t border-card-border/50">
                                               <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-                                                <Clock className="w-3 h-3 text-zinc-500" />
-                                                <span>EST: {topic.estimated_time || 0} mins</span>
+                                                <Clock className="w-3 h-3 text-info-cyan" />
+                                                <span>EST: {topic.estimated_time || 15} mins</span>
                                               </div>
                                               <div className="flex items-center gap-1.5 text-[10px] text-xp-gold font-mono font-bold">
                                                 <Zap className="w-3 h-3 text-xp-gold" />
                                                 <span>+{topic.xp_reward} XP</span>
                                               </div>
                                               <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-                                                <TrendingUp className="w-3 h-3 text-zinc-500" />
-                                                <span>COMPLETION: {topic.progress_percentage}%</span>
+                                                <Video className="w-3 h-3 text-primary" />
+                                                <span>Video Tutorial Attached</span>
                                               </div>
-                                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-                                                <FileQuestion className="w-3 h-3 text-zinc-500" />
-                                                {topic.quiz_completed ? (
-                                                  <span className="text-success-emerald font-bold">🏆 QUIZ: {topic.quiz_best_score}%</span>
-                                                ) : (
-                                                  <span>QUIZ: NOT SOLVED</span>
-                                                )}
-                                              </div>
-                                              {topic.revision_due_count > 0 && (
-                                                <div className="col-span-2 sm:col-span-4 flex items-center gap-1.5 text-[10px] text-red-500 font-mono font-bold animate-pulse">
-                                                  <ShieldAlert className="w-3 h-3 text-red-500" />
-                                                  <span>REVISION TASK DUE</span>
-                                                </div>
-                                              )}
                                             </div>
                                           )}
                                         </div>
 
                                         <div className="flex items-center justify-end">
-                                          {topic.is_locked ? (
+                                          {isLocked ? (
                                             <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-900/60 text-zinc-700">
                                               <Lock className="w-4 h-4" />
                                             </div>
                                           ) : (
-                                            <Link href={`/roadmap/${topic.id}`}>
-                                              <button className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/95 text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md shadow-primary/10 transition-all duration-200">
+                                            <Link href={`/roadmap/node/${topic.id}`}>
+                                              <button className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md shadow-primary/10 transition-all duration-200 cursor-pointer">
                                                 <Play className="w-3 h-3 fill-white" />
-                                                <span>Enter</span>
+                                                <span>Watch Video</span>
                                                 <ChevronRight className="w-3.5 h-3.5" />
                                               </button>
                                             </Link>

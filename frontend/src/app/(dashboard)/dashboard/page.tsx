@@ -8,6 +8,10 @@ import RecentProgress from "@/components/dashboard/recent-progress";
 import { DailyAdaptivePlanCard } from "@/components/adaptive/daily-adaptive-plan-card";
 import { AdaptiveRecommendationsCard } from "@/components/adaptive/adaptive-recommendations-card";
 import { FocusModeModal } from "@/components/adaptive/focus-mode-modal";
+import { DailyLoginRewardsCard } from "@/components/engagement/daily-login-rewards-card";
+import { SeasonPassCard } from "@/components/engagement/season-pass-card";
+import { WeeklyMonthlyChallengesCard } from "@/components/engagement/weekly-monthly-challenges-card";
+import { RewardChestModal } from "@/components/engagement/reward-chest-modal";
 import { ArrowRight, Sparkles, Sword, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -15,6 +19,7 @@ import { motion } from "framer-motion";
 export default function DashboardPage() {
   const { stats, user, isLoaded } = useAuthUser();
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
+  const [isChestModalOpen, setIsChestModalOpen] = useState(false);
 
   if (!isLoaded || !stats) {
     return (
@@ -67,6 +72,15 @@ export default function DashboardPage() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Phase 6 Engagement: Daily Login Rewards Chain */}
+      <DailyLoginRewardsCard onOpenChestModal={() => setIsChestModalOpen(true)} />
+
+      {/* Phase 6 Engagement: Weekly & Monthly Quests */}
+      <WeeklyMonthlyChallengesCard />
+
+      {/* Phase 6 Engagement: Valorant Season Pass */}
+      <SeasonPassCard />
 
       {/* Adaptive Learning Engine: Today's Personalized Plan */}
       <DailyAdaptivePlanCard onOpenFocusMode={() => setIsFocusModeOpen(true)} />
@@ -133,8 +147,9 @@ export default function DashboardPage() {
       {/* Recent Progress */}
       <RecentProgress />
 
-      {/* Focus Mode Overlay Modal */}
+      {/* Focus Mode & Reward Chest Modals */}
       <FocusModeModal isOpen={isFocusModeOpen} onClose={() => setIsFocusModeOpen(false)} />
+      <RewardChestModal isOpen={isChestModalOpen} onClose={() => setIsChestModalOpen(false)} />
     </div>
   );
 }

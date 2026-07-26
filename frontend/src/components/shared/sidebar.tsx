@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Compass, User, Trophy, ShieldAlert, LogOut } from "lucide-react";
+import { LayoutDashboard, Compass, User, Trophy, ShieldAlert, LogOut, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { SignOutButton } from "@clerk/nextjs";
@@ -15,6 +15,8 @@ export default function Sidebar() {
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Roadmap", href: "/roadmap", icon: Compass },
+    { name: "Contests", href: "/contests", icon: Trophy },
+    { name: "Target Companies", href: "/companies", icon: Building2 },
     { name: "Profile & Badges", href: "/profile", icon: User },
   ];
 

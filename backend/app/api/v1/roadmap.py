@@ -10,14 +10,37 @@ from app.schemas.roadmap import (
     TopicResponse, ProblemResponse, RoadmapNodeResponse,
     LearningResourceResponse, KeyConceptResponse, ConceptNoteRequest, ConceptNoteResponse,
     BookmarkToggleRequest, UserBookmarksResponse, BookmarkItem,
-    LearningChecklistRequest, LearningChecklistResponse
+    LearningChecklistRequest, LearningChecklistResponse,
+    NodeDetailResponse, NodeProgressResponse, NodeCompletionResponse, NextNodeResponse, RoadmapProgressResponse,
+    LearningObjectives, PrerequisiteNodeResponse, LessonNavigationResponse
 )
 from typing import List, Dict, Any, Optional
 import datetime
+import re
 
 router = APIRouter()
 
-from app.models.progress import ProblemStatus
+from app.models.progress import ProblemStatus, NodeStatus
+
+def extract_youtube_video_id(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return None
+    short_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', url)
+    if short_match:
+        return short_match.group(1)
+    watch_match = re.search(r'[?&]v=([a-zA-Z0-9_-]{11})', url)
+    if watch_match:
+        return watch_match.group(1)
+    embed_match = re.search(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})', url)
+    if embed_match:
+        return embed_match.group(1)
+    return None
+
+def get_youtube_thumbnail_url(video_id: Optional[str]) -> Optional[str]:
+    if not video_id:
+        return None
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
 
 def get_problem_status_and_revision(db: Session, user_id: int, problem_id: str):
     """
@@ -179,6 +202,11 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
     # Build Pydantic Response lookup dictionary
     nodes_dict = {}
     for node in all_nodes:
+        yt_id = node.youtube_video_id or extract_youtube_video_id(node.youtube_url)
+        yt_thumb = node.thumbnail_url or get_youtube_thumbnail_url(yt_id)
+        unp = user_node_progress_map.get(node.id)
+        node_status = unp.status if (unp and unp.status) else ("COMPLETED" if (unp and unp.completed) else "LOCKED")
+
         node_res = RoadmapNodeResponse(
             id=node.id,
             parent_id=node.parent_id,
@@ -190,11 +218,18 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
             estimated_time=node.estimated_time,
             xp_reward=node.xp_reward,
             difficulty=node.difficulty,
+            youtube_url=node.youtube_url,
+            youtube_video_id=yt_id,
+            thumbnail_url=yt_thumb,
+            prerequisites=node.prerequisites,
+            metadata=node.node_metadata,
+            status=node_status,
+            is_completed=(node_status == "COMPLETED"),
+            is_locked=(node_status == "LOCKED"),
             children=[]
         )
         
         # Load quiz stats if this is a topic
-        unp = user_node_progress_map.get(node.id)
         if unp:
             node_res.quiz_completed = unp.quiz_completed
             if unp.quiz_completed:
@@ -209,6 +244,7 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
                         node_res.quiz_best_score = best_att.score
                         
         nodes_dict[node.id] = node_res
+
 
     # Build hierarchy tree
     root_nodes = [node for node in nodes_dict.values() if node.parent_id is None]
@@ -285,7 +321,7 @@ def get_all_topics(clerk_id: Optional[str] = None, db: Session = Depends(get_db)
     """
     Get all roadmap topics with their problems and optional progress stats (backward-compatible).
     """
-    topics = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").order_index.asc().all()
+    topics = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").order_by(RoadmapNode.order_index.asc()).all()
     user = None
     if clerk_id:
         user = db.query(User).filter(User.clerk_id == clerk_id).first()
@@ -1454,5 +1490,442 @@ def get_topic_learning_content(
             "solved_problems": checklist.solved_problems
         }
     }
+
+
+# ==========================================
+# Video Learning Journey REST Endpoints
+# ==========================================
+
+def _get_or_create_user(db: Session, clerk_id: Optional[str]) -> Optional[User]:
+    if clerk_id:
+        u = db.query(User).filter(User.clerk_id == clerk_id).first()
+        if u:
+            return u
+    # Default fallback user if not found or not provided
+    return db.query(User).first()
+
+@router.get("/progress", response_model=RoadmapProgressResponse)
+def get_overall_roadmap_progress(clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get overall topic and video progress for the user.
+    """
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    # Topic nodes
+    topic_nodes = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").all()
+    total_videos = len(topic_nodes)
+
+    completed_count = 0
+    if user_id:
+        completed_count = db.query(UserNodeProgress).filter(
+            UserNodeProgress.user_id == user_id,
+            UserNodeProgress.status == NodeStatus.COMPLETED.value
+        ).count()
+
+    percentage = int((completed_count / total_videos) * 100) if total_videos > 0 else 0
+
+    return RoadmapProgressResponse(
+        topic_name="Striver A2Z DSA Roadmap",
+        completed_videos=completed_count,
+        total_videos=total_videos,
+        progress_percentage=percentage,
+        overall_xp=user.xp if user else 0
+    )
+
+def _get_previous_roadmap_node(db: Session, current_node: RoadmapNode) -> Optional[RoadmapNode]:
+    """
+    Finds the immediate previous roadmap node in sequential order.
+    """
+    all_topics = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").all()
+    all_topics_sorted = sorted(all_topics, key=lambda n: n.id)
+    
+    prev_node = None
+    for t in all_topics_sorted:
+        if t.id == current_node.id:
+            return prev_node
+        prev_node = t
+
+    return None
+
+def _get_node_learning_objectives(node: RoadmapNode) -> LearningObjectives:
+    meta = node.node_metadata or {}
+    lo = meta.get("learning_objectives") if isinstance(meta, dict) else None
+    
+    if isinstance(lo, dict):
+        return LearningObjectives(
+            what_you_will_learn=lo.get("what_you_will_learn", []),
+            why_this_topic_matters=lo.get("why_this_topic_matters"),
+            real_world_applications=lo.get("real_world_applications", []),
+            interview_questions=lo.get("interview_questions", [])
+        )
+    
+    title = node.title or "Topic"
+    return LearningObjectives(
+        what_you_will_learn=[
+            f"Core principles and theoretical foundation of {title}",
+            "Step-by-step algorithmic approach & implementation details",
+            "Analyzing time and space complexity optimizations"
+        ],
+        why_this_topic_matters=f"{title} is a fundamental topic in Data Structures & Algorithms, frequently tested in technical interviews at leading engineering companies.",
+        real_world_applications=[
+            "Optimizing high-throughput data processing & storage systems",
+            "Memory efficiency & cache performance in software engines",
+            "System design scalability & database query indexing"
+        ],
+        interview_questions=[
+            f"Explain the primary concept and edge cases of {title}.",
+            f"How does {title} compare in efficiency against alternative approaches?",
+            f"Write an optimal solution implementation for {title} handling edge cases."
+        ]
+    )
+
+def _get_node_prerequisites_details(db: Session, user_id: Optional[int], node: RoadmapNode) -> List[PrerequisiteNodeResponse]:
+    prereq_ids = node.prerequisites or []
+    
+    if not prereq_ids:
+        prev_node = _get_previous_roadmap_node(db, node)
+        if prev_node:
+            prereq_ids = [prev_node.id]
+            
+    prereqs = []
+    for pid in prereq_ids:
+        p_node = db.query(RoadmapNode).filter(RoadmapNode.id == pid).first()
+        if not p_node:
+            continue
+        unp = None
+        if user_id:
+            unp = db.query(UserNodeProgress).filter(
+                UserNodeProgress.user_id == user_id,
+                UserNodeProgress.node_id == pid
+            ).first()
+        st = unp.status if (unp and unp.status) else ("COMPLETED" if (unp and unp.completed) else "LOCKED")
+        if not unp and (p_node.order_index == 1 or p_node.id in ["topic_1_1_1", "step_1"]):
+            st = "AVAILABLE"
+        prereqs.append(PrerequisiteNodeResponse(
+            id=p_node.id,
+            title=p_node.title,
+            status=st,
+            is_completed=(st == "COMPLETED"),
+            is_locked=(st == "LOCKED")
+        ))
+    return prereqs
+
+def _build_node_detail_response(db: Session, user_id: Optional[int], node: RoadmapNode) -> NodeDetailResponse:
+    unp = None
+    if user_id:
+        unp = db.query(UserNodeProgress).filter(
+            UserNodeProgress.user_id == user_id,
+            UserNodeProgress.node_id == node.id
+        ).first()
+
+    status = unp.status if (unp and unp.status) else ("COMPLETED" if (unp and unp.completed) else "LOCKED")
+    
+    if not unp and (node.order_index == 1 or node.id in ["topic_1_1_1", "step_1"]):
+        status = "AVAILABLE"
+
+    yt_id = node.youtube_video_id or extract_youtube_video_id(node.youtube_url)
+    yt_thumb = node.thumbnail_url or get_youtube_thumbnail_url(yt_id)
+
+    progress_resp = None
+    if unp:
+        progress_resp = NodeProgressResponse(
+            user_id=unp.user_id,
+            node_id=unp.node_id,
+            status=unp.status or status,
+            started_at=unp.started_at,
+            completed_at=unp.completed_at,
+            completed=unp.completed or (unp.status == "COMPLETED")
+        )
+
+    parent_title = None
+    if node.parent_id:
+        parent_node = db.query(RoadmapNode).filter(RoadmapNode.id == node.parent_id).first()
+        if parent_node:
+            parent_title = parent_node.title
+
+    learning_objs = _get_node_learning_objectives(node)
+    prereqs_details = _get_node_prerequisites_details(db, user_id, node)
+
+    return NodeDetailResponse(
+        id=node.id,
+        title=node.title,
+        description=node.description,
+        order=node.order_index,
+        parent_id=node.parent_id,
+        parent_title=parent_title,
+        difficulty=node.difficulty or "Easy",
+        estimated_duration=node.estimated_time or 15,
+        youtube_url=node.youtube_url,
+        youtube_video_id=yt_id,
+        thumbnail_url=yt_thumb,
+        is_locked=(status == "LOCKED"),
+        status=status,
+        prerequisites=node.prerequisites or [],
+        prerequisites_details=prereqs_details,
+        learning_objectives=learning_objs,
+        metadata=node.node_metadata or {},
+        progress=progress_resp
+    )
+
+@router.get("/nodes/{node_id}", response_model=NodeDetailResponse)
+def get_node_by_id(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get details of a specific roadmap node by ID.
+    """
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    return _build_node_detail_response(db, user_id, node)
+
+@router.get("/nodes/{node_id}/progress", response_model=NodeProgressResponse)
+def get_user_node_progress(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get user progress status for a specific node.
+    """
+    user = _get_or_create_user(db, clerk_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    unp = db.query(UserNodeProgress).filter(
+        UserNodeProgress.user_id == user.id,
+        UserNodeProgress.node_id == node_id
+    ).first()
+
+    if not unp:
+        status = "AVAILABLE" if node_id in ["topic_1_1_1", "step_1"] else "LOCKED"
+        return NodeProgressResponse(
+            user_id=user.id,
+            node_id=node_id,
+            status=status,
+            started_at=None,
+            completed_at=None,
+            completed=False
+        )
+
+    return NodeProgressResponse(
+        user_id=unp.user_id,
+        node_id=unp.node_id,
+        status=unp.status or "LOCKED",
+        started_at=unp.started_at,
+        completed_at=unp.completed_at,
+        completed=unp.completed or (unp.status == "COMPLETED")
+    )
+
+@router.get("/nodes/{node_id}/previous", response_model=NextNodeResponse)
+def get_previous_roadmap_node_endpoint(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get the immediate previous node in sequential learning order.
+    """
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    prev_node_obj = _get_previous_roadmap_node(db, node)
+    if not prev_node_obj:
+        return NextNodeResponse(
+            next_node_id=None,
+            next_node=None,
+            message="This is the first lesson in the roadmap."
+        )
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    prev_detail = _build_node_detail_response(db, user_id, prev_node_obj)
+
+    return NextNodeResponse(
+        next_node_id=prev_node_obj.id,
+        next_node=prev_detail,
+        message="Previous node found"
+    )
+
+@router.get("/nodes/{node_id}/next", response_model=NextNodeResponse)
+def get_next_roadmap_node_endpoint(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get the immediate next node in sequential learning order.
+    """
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    next_node_obj = _get_next_roadmap_node(db, node)
+    if not next_node_obj:
+        return NextNodeResponse(
+            next_node_id=None,
+            next_node=None,
+            message="Congratulations! You completed this section."
+        )
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    next_detail = _build_node_detail_response(db, user_id, next_node_obj)
+
+    return NextNodeResponse(
+        next_node_id=next_node_obj.id,
+        next_node=next_detail,
+        message="Next node found"
+    )
+
+@router.get("/nodes/{node_id}/prerequisites", response_model=List[PrerequisiteNodeResponse])
+def get_node_prerequisites_endpoint(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get resolved prerequisite nodes with current completion status for the user.
+    """
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    return _get_node_prerequisites_details(db, user_id, node)
+
+@router.get("/nodes/{node_id}/navigation", response_model=LessonNavigationResponse)
+def get_lesson_navigation_endpoint(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get unified previous, current, next node details and navigation authorization status.
+    """
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    curr_detail = _build_node_detail_response(db, user_id, node)
+    prev_obj = _get_previous_roadmap_node(db, node)
+    prev_detail = _build_node_detail_response(db, user_id, prev_obj) if prev_obj else None
+
+    next_obj = _get_next_roadmap_node(db, node)
+    next_detail = _build_node_detail_response(db, user_id, next_obj) if next_obj else None
+
+    can_navigate = curr_detail.status == "COMPLETED" or curr_detail.status == "AVAILABLE"
+
+    return LessonNavigationResponse(
+        previous_node=prev_detail,
+        current_node=curr_detail,
+        next_node=next_detail,
+        can_navigate_next=can_navigate
+    )
+
+@router.post("/nodes/{node_id}/complete", response_model=NodeCompletionResponse)
+def mark_node_completed(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Mark a node as completed, save completion timestamp, unlock the next node, and return next node details.
+    """
+    user = _get_or_create_user(db, clerk_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    now = datetime.datetime.utcnow()
+
+    unp = db.query(UserNodeProgress).filter(
+        UserNodeProgress.user_id == user.id,
+        UserNodeProgress.node_id == node_id
+    ).first()
+
+    if not unp:
+        unp = UserNodeProgress(
+            user_id=user.id,
+            node_id=node_id,
+            status=NodeStatus.COMPLETED.value,
+            completed=True,
+            started_at=now,
+            completed_at=now
+        )
+        db.add(unp)
+    else:
+        unp.status = NodeStatus.COMPLETED.value
+        unp.completed = True
+        unp.completed_at = now
+        if not unp.started_at:
+            unp.started_at = now
+
+    reward = node.xp_reward or 100
+    user.xp = (user.xp or 0) + reward
+
+    db.commit()
+
+    next_node_obj = _get_next_roadmap_node(db, node)
+
+    next_node_detail = None
+    next_node_id = None
+    if next_node_obj:
+        next_node_id = next_node_obj.id
+        next_unp = db.query(UserNodeProgress).filter(
+            UserNodeProgress.user_id == user.id,
+            UserNodeProgress.node_id == next_node_obj.id
+        ).first()
+
+        if not next_unp:
+            next_unp = UserNodeProgress(
+                user_id=user.id,
+                node_id=next_node_obj.id,
+                status=NodeStatus.AVAILABLE.value,
+                started_at=now
+            )
+            db.add(next_unp)
+            db.commit()
+        elif next_unp.status == NodeStatus.LOCKED.value:
+            next_unp.status = NodeStatus.AVAILABLE.value
+            db.commit()
+
+        next_node_detail = _build_node_detail_response(db, user.id, next_node_obj)
+
+    total_nodes = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").count()
+    completed_nodes = db.query(UserNodeProgress).filter(
+        UserNodeProgress.user_id == user.id,
+        UserNodeProgress.status == NodeStatus.COMPLETED.value
+    ).count()
+    progress_percentage = int((completed_nodes / total_nodes) * 100) if total_nodes > 0 else 0
+
+    return NodeCompletionResponse(
+        message="Node marked as completed successfully!",
+        node_id=node_id,
+        status="COMPLETED",
+        completed_at=now,
+        next_node_id=next_node_id,
+        next_node=next_node_detail,
+        progress_percentage=progress_percentage
+    )
+
+def _get_next_roadmap_node(db: Session, current_node: RoadmapNode) -> Optional[RoadmapNode]:
+    """
+    Finds the immediate next roadmap node in sequential order.
+    First looks for sibling with higher order_index.
+    If none, looks for nodes in the next section/step.
+    """
+    if current_node.parent_id:
+        next_sibling = db.query(RoadmapNode).filter(
+            RoadmapNode.parent_id == current_node.parent_id,
+            RoadmapNode.order_index > current_node.order_index,
+            RoadmapNode.type == current_node.type
+        ).order_by(RoadmapNode.order_index.asc()).first()
+
+        if next_sibling:
+            return next_sibling
+
+    all_topics = db.query(RoadmapNode).filter(RoadmapNode.type == "topic").all()
+    all_topics_sorted = sorted(all_topics, key=lambda n: n.id)
+    
+    found_curr = False
+    for t in all_topics_sorted:
+        if found_curr:
+            return t
+        if t.id == current_node.id:
+            found_curr = True
+
+    return None
+
 
 

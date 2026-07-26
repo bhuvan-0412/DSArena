@@ -66,9 +66,17 @@ class RoadmapNodeResponse(BaseModel):
     xp_reward: int = 0
     difficulty: Optional[str] = None
     
+    # YouTube Video Attributes
+    youtube_url: Optional[str] = None
+    youtube_video_id: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    prerequisites: Optional[List[Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
     # Progress/status fields computed dynamically for the user
+    status: str = "LOCKED"  # 'LOCKED', 'AVAILABLE', 'IN_PROGRESS', 'COMPLETED'
     is_completed: bool = False
-    is_locked: bool = False
+    is_locked: bool = True
     progress_percentage: int = 0
     problems_solved: int = 0
     total_problems: int = 0
@@ -80,6 +88,83 @@ class RoadmapNodeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Video Learning Journey Schemas
+class NodeProgressResponse(BaseModel):
+    user_id: int
+    node_id: str
+    status: str  # LOCKED, AVAILABLE, IN_PROGRESS, COMPLETED
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    completed: bool = False
+
+class LearningObjectives(BaseModel):
+    what_you_will_learn: List[str] = []
+    why_this_topic_matters: Optional[str] = None
+    real_world_applications: List[str] = []
+    interview_questions: List[str] = []
+
+class PrerequisiteNodeResponse(BaseModel):
+    id: str
+    title: str
+    status: str = "LOCKED"
+    is_completed: bool = False
+    is_locked: bool = True
+
+    class Config:
+        from_attributes = True
+
+class NodeDetailResponse(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    order: int
+    parent_id: Optional[str] = None
+    parent_title: Optional[str] = None
+    difficulty: Optional[str] = "Easy"
+    estimated_duration: int = 15
+    youtube_url: Optional[str] = None
+    youtube_video_id: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    is_locked: bool = False
+    status: str = "LOCKED"
+    prerequisites: Optional[List[Any]] = None
+    prerequisites_details: Optional[List[PrerequisiteNodeResponse]] = []
+    learning_objectives: Optional[LearningObjectives] = None
+    metadata: Optional[Dict[str, Any]] = None
+    progress: Optional[NodeProgressResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class LessonNavigationResponse(BaseModel):
+    previous_node: Optional[NodeDetailResponse] = None
+    current_node: Optional[NodeDetailResponse] = None
+    next_node: Optional[NodeDetailResponse] = None
+    can_navigate_next: bool = False
+
+class NodeCompletionResponse(BaseModel):
+    message: str
+    node_id: str
+    status: str
+    completed_at: datetime
+    next_node_id: Optional[str] = None
+    next_node: Optional[NodeDetailResponse] = None
+    progress_percentage: int = 0
+
+class NextNodeResponse(BaseModel):
+    next_node_id: Optional[str] = None
+    next_node: Optional[NodeDetailResponse] = None
+    message: Optional[str] = None
+
+class RoadmapProgressResponse(BaseModel):
+    topic_name: str
+    completed_videos: int
+    total_videos: int
+    progress_percentage: int
+    overall_xp: int = 0
+
+
 
 # Sprint 2.4 Learning Content Engine Schemas
 class LearningResourceResponse(BaseModel):

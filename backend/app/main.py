@@ -15,6 +15,16 @@ from app.models.quiz import Quiz, QuizQuestion, UserQuizAttempt
 from app.models.learning_content import LearningResource, KeyConcept, ConceptNote, Bookmark, LearningChecklist
 from app.models.ai import ProviderConfig, AISettings, PromptTemplate, Conversation, Message
 from app.models.adaptive import UserPreferences, DailyStudyPlan, LearningRecommendation, LearningInsight
+from app.models.interview import CareerGoal, UserCareerGoal, Company, CompanyTopic, UserCompany, InterviewReadiness, Milestone, UserMilestone
+from app.models.engagement import (
+    DailyRewardClaim, StreakFreeze, WeeklyChallenge, UserWeeklyChallenge,
+    MonthlyChallenge, UserMonthlyChallenge, Season, SeasonReward,
+    UserSeasonProgress, RewardChest, UserTitle
+)
+from app.models.contest import (
+    Contest, ContestProblem, ContestParticipation, ContestSubmission,
+    ContestLeaderboard, RatingHistory
+)
 
 # Create the database tables on startup (as a fallback/convenience for MVP)
 # In production, we'll use Alembic migrations.

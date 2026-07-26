@@ -20,8 +20,22 @@ const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 export function useAuthUser() {
   const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const clerk = isClerkConfigured ? useUser() : null;
+  
+  let clerkUser = null;
+  let isClerkSignedIn = false;
+  let isClerkLoaded = true;
+
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const clerk = useUser();
+    if (isClerkConfigured && clerk) {
+      clerkUser = clerk.user;
+      isClerkSignedIn = !!clerk.isSignedIn;
+      isClerkLoaded = !!clerk.isLoaded;
+    }
+  } catch {
+    isClerkLoaded = true;
+  }
 
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,9 +49,9 @@ export function useAuthUser() {
     imageUrl: "https://api.dicebear.com/7.x/pixel-art/svg?seed=striver",
   };
 
-  const isSignedIn = isClerkConfigured ? !!clerk?.isSignedIn : true;
-  const user = isClerkConfigured ? clerk?.user : mockUser;
-  const isLoaded = isClerkConfigured ? !!clerk?.isLoaded : true;
+  const isSignedIn = isClerkConfigured ? isClerkSignedIn : true;
+  const user = isClerkConfigured && clerkUser ? clerkUser : mockUser;
+  const isLoaded = isClerkConfigured ? isClerkLoaded : true;
 
   const clerkId = user?.id || "mock_user_striver";
   const userEmail = user?.primaryEmailAddress?.emailAddress || "striver@dsarena.com";
@@ -69,8 +83,6 @@ export function useAuthUser() {
           const syncedData = await syncResponse.json();
           setStats(syncedData);
         } else {
-          console.error("Backend sync failed");
-          // Fallback to local mock state on sync failure
           fallbackMockState();
         }
       } catch (err) {
@@ -88,7 +100,7 @@ export function useAuthUser() {
         email: userEmail,
         username: userUsername,
         display_name: userDisplayName,
-        xp: 1450, // Level 2 (1000 + 450 XP)
+        xp: 1450,
         level: 2,
         rank: "Bronze",
         current_streak: 5,
@@ -108,7 +120,6 @@ export function useAuthUser() {
         const updatedStats = await response.json();
         setStats(updatedStats);
       } else {
-        // Local state update fallback if backend fails
         setStats((prev) => {
           if (!prev) return null;
           const nextXp = prev.xp + amount;

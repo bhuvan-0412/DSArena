@@ -1,25 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/roadmap(.*)",
-  "/profile(.*)",
-]);
-
-export default function middleware(req: NextRequest, event: NextFetchEvent) {
-  if (!publishableKey) {
-    // Graceful fallback for mock mode without clerk keys configured
-    return NextResponse.next();
-  }
-  
-  return clerkMiddleware(async (auth, request) => {
-    if (isProtectedRoute(request)) {
-      await auth.protect();
-    }
-  })(req, event);
+export default function middleware(req: NextRequest) {
+  // Graceful fallback for local mock mode
+  return NextResponse.next();
 }
 
 export const config = {

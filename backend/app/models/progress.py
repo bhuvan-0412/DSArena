@@ -32,13 +32,21 @@ class UserProgress(Base):
         UniqueConstraint("user_id", "problem_id", name="uq_user_problem"),
     )
 
+class NodeStatus(str, enum.Enum):
+    LOCKED = "LOCKED"
+    AVAILABLE = "AVAILABLE"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
 class UserNodeProgress(Base):
     __tablename__ = "user_node_progress"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     node_id = Column(String, ForeignKey("roadmap_nodes.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String, default=NodeStatus.LOCKED.value) # LOCKED, AVAILABLE, IN_PROGRESS, COMPLETED
     completed = Column(Boolean, default=False)
+    started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     
     # Statistics

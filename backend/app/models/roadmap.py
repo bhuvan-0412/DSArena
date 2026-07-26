@@ -16,11 +16,36 @@ class RoadmapNode(Base):
     xp_reward = Column(Integer, default=0)
     difficulty = Column(String, nullable=True)  # 'Easy', 'Medium', 'Hard'
 
+    # YouTube Video Attributes
+    youtube_url = Column(String, nullable=True)
+    youtube_video_id = Column(String, nullable=True)
+    thumbnail_url = Column(String, nullable=True)
+    
+    # Metadata & Prerequisites
+    prerequisites = Column(JSON, nullable=True)
+    node_metadata = Column("metadata", JSON, nullable=True)
+
     # Polymorphic configuration
     __mapper_args__ = {
         "polymorphic_on": type,
         "polymorphic_identity": "node",
     }
+
+    @property
+    def order(self) -> int:
+        return self.order_index
+
+    @order.setter
+    def order(self, value: int):
+        self.order_index = value
+
+    @property
+    def estimated_duration(self) -> int:
+        return self.estimated_time or 0
+
+    @estimated_duration.setter
+    def estimated_duration(self, value: int):
+        self.estimated_time = value
 
     # Relationships
     parent = relationship("RoadmapNode", remote_side=[id], back_populates="children")

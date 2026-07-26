@@ -7,6 +7,12 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { AISettingsModal } from "@/components/ai/ai-settings-modal";
 import { UserPreferencesForm } from "@/components/adaptive/user-preferences-form";
+import { ReadinessGaugeCard } from "@/components/interview/readiness-gauge-card";
+import { CareerGoalsSelector } from "@/components/interview/career-goals-selector";
+import { MilestoneTrackerCard } from "@/components/interview/milestone-tracker-card";
+import { InteractiveStudyCalendar } from "@/components/engagement/interactive-study-calendar";
+import { TitleEquipModal } from "@/components/engagement/title-equip-modal";
+import { RatingChartCard } from "@/components/contest/rating-chart-card";
 
 interface AnalyticsData {
   strengths: string[];
@@ -503,8 +509,19 @@ export default function ProfilePage() {
           )}
         </div>
 
+        {/* Phase 7 Contest Platform Rating & Stats */}
+        <RatingChartCard />
+
+        {/* Phase 5 Interview Operating System */}
+        <ReadinessGaugeCard />
+        <CareerGoalsSelector />
+        <MilestoneTrackerCard />
+
         {/* Adaptive Learning Engine User Preferences */}
         <UserPreferencesForm />
+
+        {/* Phase 6 Engagement: GitHub Style Study Contribution Calendar */}
+        <InteractiveStudyCalendar />
 
         {/* Bookmarks Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

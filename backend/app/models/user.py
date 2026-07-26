@@ -17,6 +17,11 @@ class User(Base):
     level = Column(Integer, default=1)
     rank = Column(String, default="Unranked")  # Unranked, Iron, Bronze, Silver, Gold, Platinum, Diamond, Ascendant, Master, Grandmaster, Legend
     
+    # Contest Rating (Elo)
+    contest_rating = Column(Integer, default=1200)
+    highest_rating = Column(Integer, default=1200)
+    contest_rank_title = Column(String, default="Novice") # Beginner, Novice, Apprentice, Specialist, Expert, Candidate Master, Master, Grandmaster, Legend
+
     # Streaks
     current_streak = Column(Integer, default=0)
     max_streak = Column(Integer, default=0)
@@ -37,6 +42,19 @@ class User(Base):
     daily_study_plans = relationship("DailyStudyPlan", back_populates="user", cascade="all, delete-orphan")
     recommendations = relationship("LearningRecommendation", back_populates="user", cascade="all, delete-orphan")
     insights = relationship("LearningInsight", back_populates="user", cascade="all, delete-orphan")
+    career_goals = relationship("UserCareerGoal", back_populates="user", cascade="all, delete-orphan")
+    target_companies = relationship("UserCompany", back_populates="user", cascade="all, delete-orphan")
+    interview_readiness = relationship("InterviewReadiness", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    milestones = relationship("UserMilestone", back_populates="user", cascade="all, delete-orphan")
+    daily_rewards = relationship("DailyRewardClaim", back_populates="user", cascade="all, delete-orphan")
+    streak_freeze = relationship("StreakFreeze", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    weekly_challenges = relationship("UserWeeklyChallenge", back_populates="user", cascade="all, delete-orphan")
+    monthly_challenges = relationship("UserMonthlyChallenge", back_populates="user", cascade="all, delete-orphan")
+    season_progress = relationship("UserSeasonProgress", back_populates="user", cascade="all, delete-orphan")
+    reward_chests = relationship("RewardChest", back_populates="user", cascade="all, delete-orphan")
+    titles = relationship("UserTitle", back_populates="user", cascade="all, delete-orphan")
+    contest_participations = relationship("ContestParticipation", back_populates="user", cascade="all, delete-orphan")
+    rating_history = relationship("RatingHistory", back_populates="user", cascade="all, delete-orphan")
 
 class XPHistory(Base):
     __tablename__ = "xp_history"

@@ -1,14 +1,35 @@
+import datetime
+import re
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, Base, engine
+import app.models
 from app.models.user import User, XPHistory
 from app.models.roadmap import RoadmapNode, Problem
 from app.models.progress import UserProgress, UserNodeProgress
 from app.models.achievement import Achievement, UserAchievement
 from app.models.quiz import Quiz, QuizQuestion
-from app.models.learning_content import LearningResource, KeyConcept
+from app.models.learning_content import LearningResource, KeyConcept # Ensures all models are registered on Base.metadata
+from app.services.striver_importer import StriverVideoImporter
+
+def extract_youtube_video_id(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return None
+    short_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', url)
+    if short_match:
+        return short_match.group(1)
+    watch_match = re.search(r'[?&]v=([a-zA-Z0-9_-]{11})', url)
+    if watch_match:
+        return watch_match.group(1)
+    embed_match = re.search(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})', url)
+    if embed_match:
+        return embed_match.group(1)
+    return None
+
 
 def seed_db():
     # Make sure tables exist
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     
     db: Session = SessionLocal()
@@ -215,10 +236,14 @@ def seed_db():
             RoadmapNode(id="topic_5_2_4", parent_id="sec_5_2", title="Implement Atoi", slug="implement-atoi", type="topic", order_index=4, estimated_time=35, xp_reward=100, difficulty="Medium"),
             RoadmapNode(id="topic_5_2_5", parent_id="sec_5_2", title="Count substrings with K distinct characters", slug="substrings-k-distinct", type="topic", order_index=5, estimated_time=45, xp_reward=100, difficulty="Medium"),
             RoadmapNode(id="topic_5_2_6", parent_id="sec_5_2", title="Longest Palindromic Substring", slug="longest-palindromic-substring", type="topic", order_index=6, estimated_time=45, xp_reward=100, difficulty="Medium"),
-            RoadmapNode(id="topic_5_2_7", parent_id="sec_5_2", title="Sum of Beauty of all substrings", slug="beauty-substrings-sum", type="topic", order_index=7, estimated_time=40, xp_reward=100, difficulty="Medium"),
         ]
+
         db.add_all(topics)
         db.commit()
+
+        # Automatically import and match official Striver A2Z YouTube videos
+        importer = StriverVideoImporter(db=db, force=True)
+        importer.run_import()
 
         print("Seeding problems...")
         problems = [
@@ -872,15 +897,187 @@ def seed_db():
         db.add_all(templates)
         db.commit()
 
-        # Seed default AI Settings & Adaptive Preferences for mock_user_striver
+        # Seed default AI Settings & Adaptive Preferences & Interview OS for mock_user_striver
         from app.models.adaptive import UserPreferences, DailyStudyPlan, LearningRecommendation, LearningInsight
+        from app.models.interview import CareerGoal, UserCareerGoal, Company, CompanyTopic, UserCompany, InterviewReadiness, Milestone, UserMilestone
+        
+        db.query(UserMilestone).delete()
+        db.query(Milestone).delete()
+        db.query(UserCompany).delete()
+        db.query(CompanyTopic).delete()
+        db.query(Company).delete()
+        db.query(UserCareerGoal).delete()
+        db.query(CareerGoal).delete()
         db.query(LearningRecommendation).delete()
         db.query(DailyStudyPlan).delete()
         db.query(UserPreferences).delete()
         db.commit()
 
+        # 1. Career Goals
+        goals = [
+            CareerGoal(slug="software_engineer", title="Software Engineer", description="Targeting SDE-1 / SDE-2 roles at top tech companies.", icon="Briefcase"),
+            CareerGoal(slug="internship", title="Summer Internship", description="Pre-final year target for SDE internships.", icon="GraduationCap"),
+            CareerGoal(slug="campus_placement", title="Campus Placement", description="On-campus placement drives & college hiring.", icon="Building2"),
+            CareerGoal(slug="competitive_programming", title="Competitive Programming", description="Rating push on Codeforces / LeetCode Contests.", icon="Trophy"),
+            CareerGoal(slug="learn_dsa", title="Learn DSA Fundamentals", description="Mastering core data structures & algorithms from scratch.", icon="BookOpen"),
+            CareerGoal(slug="switch_company", title="Company Switch", description="Experienced engineer switching to tier-1 companies.", icon="Zap"),
+        ]
+        db.add_all(goals)
+
+        # 2. Target Companies (14 requested)
+        companies = [
+            Company(slug="amazon", name="Amazon", logo_url="https://api.iconify.design/logos:aws.svg", difficulty="Hard", interview_rounds=["Online Assessment (2 Questions)", "Technical Round 1 (DSA)", "Technical Round 2 (System Design / LLD)", "Bar Raiser (Leadership Principles)"], high_frequency_topics=["topic_3_2_1", "topic_2_1_2"], recommended_problem_count=50, expected_prep_days=30),
+            Company(slug="google", name="Google", logo_url="https://api.iconify.design/logos:google-icon.svg", difficulty="Hard", interview_rounds=["Screening Round (Graphs / DP)", "Technical Round 1 (Hard Algorithms)", "Technical Round 2 (System Architecture)", "Googliness & Leadership"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=60, expected_prep_days=45),
+            Company(slug="microsoft", name="Microsoft", logo_url="https://api.iconify.design/logos:microsoft.svg", difficulty="Medium", interview_rounds=["Codility Assessment", "Technical Round 1 (Trees & Arrays)", "Technical Round 2 (System Design)", "AA Round"], high_frequency_topics=["topic_3_2_1", "topic_2_1_2"], recommended_problem_count=40, expected_prep_days=25),
+            Company(slug="atlassian", name="Atlassian", logo_url="https://api.iconify.design/logos:atlassian.svg", difficulty="Hard", interview_rounds=["Online Assessment", "Data Structures & Algorithms", "System Design / Coding Craftsmanship", "Values & Behavioral"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=45, expected_prep_days=30),
+            Company(slug="adobe", name="Adobe", logo_url="https://api.iconify.design/logos:adobe-icon.svg", difficulty="Medium", interview_rounds=["Online Test", "Technical Round 1 (C++ / OOP / DSA)", "Technical Round 2", "HR Round"], high_frequency_topics=["topic_2_1_2"], recommended_problem_count=35, expected_prep_days=20),
+            Company(slug="oracle", name="Oracle", logo_url="https://api.iconify.design/logos:oracle.svg", difficulty="Medium", interview_rounds=["Online Assessment", "Technical Round 1 (SQL & DSA)", "Technical Round 2", "Managerial Round"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=30, expected_prep_days=20),
+            Company(slug="goldman_sachs", name="Goldman Sachs", logo_url="https://api.iconify.design/logos:goldmansachs.svg", difficulty="Hard", interview_rounds=["HackerRank Math & Coding", "Technical Round 1 (DP & Math)", "Technical Round 2", "HR Round"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=50, expected_prep_days=35),
+            Company(slug="uber", name="Uber", logo_url="https://api.iconify.design/logos:uber.svg", difficulty="Hard", interview_rounds=["CodeSignal OA", "Technical Round 1 (Graphs / Algorithms)", "Technical Round 2 (LLD / System Design)", "Bar Raiser"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=55, expected_prep_days=40),
+            Company(slug="flipkart", name="Flipkart", logo_url="https://api.iconify.design/logos:flipkart.svg", difficulty="Hard", interview_rounds=["Machine Coding Round", "Problem Solving / DSA", "System Design", "Cultural Fit"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=45, expected_prep_days=30),
+            Company(slug="meesho", name="Meesho", logo_url="https://api.iconify.design/logos:meesho.svg", difficulty="Medium", interview_rounds=["Online Assessment", "Problem Solving Round", "System Design", "Culture Fit"], high_frequency_topics=["topic_3_2_1"], recommended_problem_count=35, expected_prep_days=20),
+            Company(slug="zoho", name="Zoho", logo_url="https://api.iconify.design/logos:zoho.svg", difficulty="Easy", interview_rounds=["Round 1: C / Java Basics", "Round 2: Advanced Coding", "Round 3: Design", "HR Round"], high_frequency_topics=["topic_2_1_2"], recommended_problem_count=25, expected_prep_days=15),
+            Company(slug="tcs", name="TCS", logo_url="https://api.iconify.design/logos:tcs.svg", difficulty="Easy", interview_rounds=["TCS NQT Assessment", "Technical Interview", "HR Interview"], high_frequency_topics=["topic_2_1_2"], recommended_problem_count=20, expected_prep_days=10),
+            Company(slug="infosys", name="Infosys", logo_url="https://api.iconify.design/logos:infosys.svg", difficulty="Easy", interview_rounds=["InfyTQ / HackWithInfy", "Technical Round", "HR Round"], high_frequency_topics=["topic_2_1_2"], recommended_problem_count=20, expected_prep_days=10),
+            Company(slug="wipro", name="Wipro", logo_url="https://api.iconify.design/logos:wipro.svg", difficulty="Easy", interview_rounds=["NLTH Assessment", "Technical & HR Interview"], high_frequency_topics=["topic_2_1_2"], recommended_problem_count=20, expected_prep_days=10),
+        ]
+        db.add_all(companies)
+
+        # 3. Milestones
+        milestones = [
+            Milestone(slug="complete_arrays", title="Arrays Master", description="Solve your first array & hashing problem.", icon="Layers", xp_reward=250, badge_name="Array Pioneer"),
+            Milestone(slug="solve_50_problems", title="Gladiator Centurion", description="Solve 50 Data Structure problems.", icon="Trophy", xp_reward=500, badge_name="Gladiator Centurion"),
+            Milestone(slug="complete_graphs", title="Graph Conqueror", description="Master Graph Traversal (BFS / DFS).", icon="GitFork", xp_reward=400, badge_name="Graph Conqueror"),
+            Milestone(slug="complete_dp", title="Dynamic Titan", description="Solve Dynamic Programming sub-problems.", icon="Zap", xp_reward=600, badge_name="Dynamic Titan"),
+            Milestone(slug="readiness_80", title="Interview Ready", description="Achieve an 80%+ Interview Readiness Score.", icon="ShieldCheck", xp_reward=1000, badge_name="FAANG Ready"),
+        ]
+        db.add_all(milestones)
+        # 4. Weekly & Monthly Challenges
+        from app.models.engagement import WeeklyChallenge, MonthlyChallenge, Season, SeasonReward, StreakFreeze, RewardChest, UserTitle
+        db.query(WeeklyChallenge).delete()
+        db.query(MonthlyChallenge).delete()
+        db.query(Season).delete()
+        db.commit()
+
+        w_challenges = [
+            WeeklyChallenge(title="Solve 15 Problems", description="Solve 15 coding problems this week.", target_count=15, xp_reward=500),
+            WeeklyChallenge(title="Earn 1000 XP", description="Accumulate 1000 XP through problem solving & quizzes.", target_count=1000, xp_reward=500),
+            WeeklyChallenge(title="Complete 2 Topics", description="Finish 2 topics on your roadmap.", target_count=2, xp_reward=400),
+            WeeklyChallenge(title="Perfect Quiz Score", description="Achieve 100% accuracy on any topic quiz.", target_count=1, xp_reward=300),
+            WeeklyChallenge(title="5-Day Study Streak", description="Maintain an active study streak for 5 days.", target_count=5, xp_reward=450),
+        ]
+        db.add_all(w_challenges)
+
+        m_challenges = [
+            MonthlyChallenge(title="Finish Arrays & Hashing", description="Complete all Array & Hashing problems.", target_count=5, xp_reward=1500),
+            MonthlyChallenge(title="Finish Binary Search", description="Master Binary Search algorithms.", target_count=5, xp_reward=1500),
+            MonthlyChallenge(title="Reach Gold Rank", description="Push your rank to Gold in DSArena.", target_count=1, xp_reward=2000),
+            MonthlyChallenge(title="Complete 30 Study Sessions", description="Complete 30 daily study sessions.", target_count=30, xp_reward=2500),
+        ]
+        db.add_all(m_challenges)
+
+        # 5. Season 1 Pass
+        season1 = Season(name="Season 1: Origin of Algorithms", is_active=True)
+        db.add(season1)
+        db.commit()
+
+        # 6. Timed Coding Contests
+        from app.models.contest import Contest, ContestProblem, ContestParticipation, RatingHistory
+        db.query(Contest).delete()
+        db.commit()
+
+        now = datetime.datetime.utcnow()
+        contests = [
+            Contest(
+                title="DSArena Weekly Contest 1",
+                slug="weekly_contest_1",
+                contest_type="weekly",
+                description="Official weekly competitive algorithms contest. 4 problems, 90 minutes.",
+                difficulty="Medium",
+                duration_minutes=90,
+                start_time=now - datetime.timedelta(minutes=30),
+                end_time=now + datetime.timedelta(minutes=60),
+                prize_xp=1500,
+                is_active=True
+            ),
+            Contest(
+                title="Daily Speed Challenge #42",
+                slug="daily_speed_42",
+                contest_type="daily",
+                description="Fast-paced 30-minute daily algorithm sprint.",
+                difficulty="Easy",
+                duration_minutes=30,
+                start_time=now - datetime.timedelta(minutes=10),
+                end_time=now + datetime.timedelta(minutes=20),
+                prize_xp=500,
+                is_active=True
+            ),
+            Contest(
+                title="Amazon SDE Championship",
+                slug="amazon_sde_champ",
+                contest_type="company",
+                description="Simulated Amazon Online Assessment contest with real interview questions.",
+                difficulty="Hard",
+                duration_minutes=120,
+                start_time=now + datetime.timedelta(days=2),
+                end_time=now + datetime.timedelta(days=2, hours=2),
+                prize_xp=3000,
+                is_active=True
+            ),
+            Contest(
+                title="Monthly Grand Master Cup",
+                slug="monthly_gm_cup",
+                contest_type="monthly",
+                description="Past championship contest available for Virtual Contest replay.",
+                difficulty="Hard",
+                duration_minutes=120,
+                start_time=now - datetime.timedelta(days=7),
+                end_time=now - datetime.timedelta(days=7, hours=-2),
+                prize_xp=5000,
+                is_active=False
+            )
+        ]
+        db.add_all(contests)
+        db.commit()
+
+        # Seed contest problems for Weekly Contest 1
+        c1 = db.query(Contest).filter(Contest.slug == "weekly_contest_1").first()
+        if c1:
+            cp1 = ContestProblem(contest_id=c1.id, problem_id="problem_3_2_1", problem_order=1, points=500, editorial_markdown="Use Two Pointers to find target sum in O(N).")
+            cp2 = ContestProblem(contest_id=c1.id, problem_id="problem_2_1_2", problem_order=2, points=1000, editorial_markdown="Use HashMap to store element indices.")
+            db.add_all([cp1, cp2])
+            db.commit()
+
         user = db.query(User).filter(User.clerk_id == "mock_user_striver").first()
+        if not user:
+            user = User(
+                clerk_id="mock_user_striver",
+                email="striver@dsarena.com",
+                username="striver",
+                display_name="Striver",
+                xp=1000,
+                level=5,
+                rank="Gold",
+                current_streak=7,
+                max_streak=14
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        # Seed initial node progress (topic_1_1_1 is AVAILABLE)
+        db.query(UserNodeProgress).filter(UserNodeProgress.user_id == user.id).delete()
+        unp_first = UserNodeProgress(
+            user_id=user.id,
+            node_id="topic_1_1_1",
+            status="AVAILABLE",
+            started_at=datetime.datetime.utcnow()
+        )
+        db.add(unp_first)
+        db.commit()
+
         if user:
+
             default_prov = db.query(ProviderConfig).filter(ProviderConfig.is_default == True).first()
             ai_setting = AISettings(
                 user_id=user.id,
@@ -899,9 +1096,29 @@ def seed_db():
                 favorite_language="python"
             )
             db.add(prefs)
+
+            # Seed default titles & streak freeze & mystery chest
+            db.add(StreakFreeze(user_id=user.id, current_freezes=1, max_freezes=2))
+            db.add(RewardChest(user_id=user.id, chest_type="mystery", is_opened=False))
+            db.add(UserTitle(user_id=user.id, title_name="Algorithm Explorer", is_equipped=True))
+            db.add(UserTitle(user_id=user.id, title_name="Array Conqueror", is_equipped=False))
+
+            # User selected goals & companies
+            g1 = db.query(CareerGoal).filter(CareerGoal.slug == "software_engineer").first()
+            g2 = db.query(CareerGoal).filter(CareerGoal.slug == "switch_company").first()
+            if g1: db.add(UserCareerGoal(user_id=user.id, goal_id=g1.id))
+            if g2: db.add(UserCareerGoal(user_id=user.id, goal_id=g2.id))
+
+            c1 = db.query(Company).filter(Company.slug == "amazon").first()
+            c2 = db.query(Company).filter(Company.slug == "google").first()
+            c3 = db.query(Company).filter(Company.slug == "microsoft").first()
+            if c1: db.add(UserCompany(user_id=user.id, company_id=c1.id))
+            if c2: db.add(UserCompany(user_id=user.id, company_id=c2.id))
+            if c3: db.add(UserCompany(user_id=user.id, company_id=c3.id))
+
             db.commit()
 
-        print("Database seeded successfully with AI Mentor Foundation & Adaptive Learning Engine!")
+        print("Database seeded successfully with AI Mentor, Adaptive Learning, Interview OS & Engagement Engine!")
     except Exception as e:
         db.rollback()
         print(f"Error seeding database: {e}")
