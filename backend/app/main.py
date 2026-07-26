@@ -12,7 +12,7 @@ from app.models.revision import RevisionTask
 from app.models.mission import UserMission
 from app.models.activity import DailyActivity
 from app.models.quiz import Quiz, QuizQuestion, UserQuizAttempt
-from app.models.learning_content import LearningResource, KeyConcept, ConceptNote, Bookmark, LearningChecklist
+from app.models.learning_content import LearningResource, KeyConcept, ConceptNote, Bookmark, LearningChecklist, LessonSummary, LessonResource, LessonNote
 from app.models.ai import ProviderConfig, AISettings, PromptTemplate, Conversation, Message
 from app.models.adaptive import UserPreferences, DailyStudyPlan, LearningRecommendation, LearningInsight
 from app.models.interview import CareerGoal, UserCareerGoal, Company, CompanyTopic, UserCompany, InterviewReadiness, Milestone, UserMilestone

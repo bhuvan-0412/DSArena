@@ -5,14 +5,19 @@ from app.models.roadmap import RoadmapNode, Problem
 from app.models.progress import UserProgress, UserNodeProgress
 from app.models.revision import RevisionTask
 from app.models.user import User, XPHistory
-from app.models.learning_content import LearningResource, KeyConcept, ConceptNote, Bookmark, LearningChecklist
+from app.models.learning_content import (
+    LearningResource, KeyConcept, ConceptNote, Bookmark, LearningChecklist,
+    LessonSummary, LessonResource, LessonNote
+)
 from app.schemas.roadmap import (
     TopicResponse, ProblemResponse, RoadmapNodeResponse,
     LearningResourceResponse, KeyConceptResponse, ConceptNoteRequest, ConceptNoteResponse,
     BookmarkToggleRequest, UserBookmarksResponse, BookmarkItem,
     LearningChecklistRequest, LearningChecklistResponse,
     NodeDetailResponse, NodeProgressResponse, NodeCompletionResponse, NextNodeResponse, RoadmapProgressResponse,
-    LearningObjectives, PrerequisiteNodeResponse, LessonNavigationResponse
+    LearningObjectives, PrerequisiteNodeResponse, LessonNavigationResponse,
+    LessonNoteRequest, LessonNoteResponse, LessonTakeawaysResponse, LessonTipsResponse,
+    LessonResourceItemResponse, LessonKnowledgeHubResponse
 )
 from typing import List, Dict, Any, Optional
 import datetime
@@ -1926,6 +1931,232 @@ def _get_next_roadmap_node(db: Session, current_node: RoadmapNode) -> Optional[R
             found_curr = True
 
     return None
+
+# =======================================================
+# Sprint R1.3 Lesson Knowledge Hub Endpoints & Helpers
+# =======================================================
+
+def _get_lesson_takeaways_helper(db: Session, node: RoadmapNode) -> LessonTakeawaysResponse:
+    summary_item = db.query(LessonSummary).filter(LessonSummary.node_id == node.id).first()
+    if summary_item:
+        return LessonTakeawaysResponse(
+            summary=summary_item.summary or f"Core concept summary for {node.title}.",
+            important_concepts=summary_item.important_concepts or [],
+            definitions=summary_item.definitions or [],
+            interview_points=summary_item.interview_points or []
+        )
+    
+    title = node.title or "Topic"
+    return LessonTakeawaysResponse(
+        summary=f"Essential overview and foundational principles of {title} in Data Structures & Algorithms.",
+        important_concepts=[
+            f"Core logic and algorithmic paradigm behind {title}",
+            "Analyzing time and space complexity trade-offs",
+            "Key invariant properties and boundary condition handling"
+        ],
+        definitions=[
+            {"term": f"{title}", "definition": f"A standard DSA concept used to structure data or solve algorithmic tasks efficiently."},
+            {"term": "Time Complexity", "definition": "Measures execution step count relative to input size N."},
+            {"term": "Space Complexity", "definition": "Measures auxiliary memory allocated during runtime execution."}
+        ],
+        interview_points=[
+            f"Explain how {title} optimizes step count over naive brute-force approaches.",
+            f"Identify common corner cases such as empty inputs, single element, or memory limits.",
+            f"Describe real-world software applications utilizing {title}."
+        ]
+    )
+
+def _get_lesson_tips_helper(db: Session, node: RoadmapNode) -> LessonTipsResponse:
+    summary_item = db.query(LessonSummary).filter(LessonSummary.node_id == node.id).first()
+    if summary_item and (summary_item.common_mistakes or summary_item.best_practices):
+        return LessonTipsResponse(
+            common_mistakes=summary_item.common_mistakes or [],
+            best_practices=summary_item.best_practices or [],
+            things_to_remember=summary_item.things_to_remember or [],
+            interview_tips=summary_item.interview_tips or []
+        )
+
+    title = node.title or "Topic"
+    return LessonTipsResponse(
+        common_mistakes=[
+            f"Off-by-one errors during loop indexing or pointer bounds in {title}",
+            "Forgetting edge cases like empty inputs, duplicate values, or integer overflow",
+            "Unnecessary re-allocations inside hot loops reducing overall execution speed"
+        ],
+        best_practices=[
+            "Always validate inputs and check boundary edge cases first",
+            "Use descriptive variable names for readability during live coding interviews",
+            "Manually dry-run logic on sample inputs before finalizing your solution"
+        ],
+        things_to_remember=[
+            "Analyze time & space requirements before writing complete code",
+            "Keep pointer boundaries strictly in-range to prevent memory faults",
+            "Prefer iterative or tail-recursive patterns when call stack depth is large"
+        ],
+        interview_tips=[
+            "Communicate your thought process out loud clearly to your interviewer",
+            "Start with a simple working approach before optimizing complexity",
+            "Proactively write edge case tests to prove solution correctness"
+        ]
+    )
+
+def _get_lesson_resources_helper(db: Session, node: RoadmapNode) -> List[LessonResourceItemResponse]:
+    db_resources = db.query(LessonResource).filter(LessonResource.node_id == node.id).order_by(LessonResource.order_index.asc()).all()
+    if db_resources:
+        return [
+            LessonResourceItemResponse(
+                id=r.id,
+                node_id=r.node_id,
+                title=r.title,
+                description=r.description,
+                type=r.type,
+                url=r.url,
+                order_index=r.order_index
+            )
+            for r in db_resources
+        ]
+
+    title = node.title or "Topic"
+    return [
+        LessonResourceItemResponse(
+            id=1,
+            node_id=node.id,
+            title=f"Official {title} Language Guide",
+            description="Comprehensive language specification and standard library reference.",
+            type="Documentation",
+            url="https://en.cppreference.com/",
+            order_index=1
+        ),
+        LessonResourceItemResponse(
+            id=2,
+            node_id=node.id,
+            title=f"Mastering {title} - Deep Dive Article",
+            description="Detailed step-by-step article explaining internal mechanics & optimization.",
+            type="Articles",
+            url="https://geeksforgeeks.org/",
+            order_index=2
+        ),
+        LessonResourceItemResponse(
+            id=3,
+            node_id=node.id,
+            title=f"{title} Cheat Sheet & Complexity Table",
+            description="Handy reference cheat sheet summarizing time & space complexities.",
+            type="Cheat Sheets",
+            url="https://cheatsheet.site/",
+            order_index=3
+        ),
+        LessonResourceItemResponse(
+            id=4,
+            node_id=node.id,
+            title=f"{title} Production Code Repository",
+            description="Open-source reference code implementation in C++, Java, Python, and JavaScript.",
+            type="GitHub",
+            url="https://github.com/bhuvan-0412/DSArena",
+            order_index=4
+        ),
+        LessonResourceItemResponse(
+            id=5,
+            node_id=node.id,
+            title=f"Visual Video Demonstration: {title}",
+            description="Video breakdown and step-by-step visual animation.",
+            type="YouTube",
+            url=node.youtube_url or "https://youtube.com",
+            order_index=5
+        )
+    ]
+
+@router.get("/nodes/{node_id}/hub", response_model=LessonKnowledgeHubResponse)
+def get_lesson_knowledge_hub(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+
+    user = _get_or_create_user(db, clerk_id)
+    user_id = user.id if user else None
+
+    note_resp = LessonNoteResponse(id=0, node_id=node_id, content="", updated_at=None)
+    if user_id:
+        note = db.query(ConceptNote).filter(ConceptNote.user_id == user_id, ConceptNote.node_id == node_id).first()
+        if note:
+            note_resp = LessonNoteResponse(id=note.id, node_id=node_id, content=note.content, updated_at=note.updated_at)
+
+    takeaways = _get_lesson_takeaways_helper(db, node)
+    tips = _get_lesson_tips_helper(db, node)
+    resources = _get_lesson_resources_helper(db, node)
+
+    return LessonKnowledgeHubResponse(
+        node_id=node_id,
+        title=node.title,
+        notes=note_resp,
+        takeaways=takeaways,
+        tips=tips,
+        resources=resources
+    )
+
+@router.get("/nodes/{node_id}/notes", response_model=LessonNoteResponse)
+def get_user_lesson_note(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    user = _get_or_create_user(db, clerk_id)
+    if not user:
+        return LessonNoteResponse(id=0, node_id=node_id, content="", updated_at=None)
+    note = db.query(ConceptNote).filter(ConceptNote.user_id == user.id, ConceptNote.node_id == node_id).first()
+    if not note:
+        return LessonNoteResponse(id=0, node_id=node_id, content="", updated_at=None)
+    return LessonNoteResponse(id=note.id, node_id=node_id, content=note.content, updated_at=note.updated_at)
+
+@router.post("/nodes/{node_id}/notes", response_model=LessonNoteResponse)
+@router.put("/nodes/{node_id}/notes", response_model=LessonNoteResponse)
+def save_user_lesson_note(node_id: str, req: LessonNoteRequest, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    user = _get_or_create_user(db, clerk_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.datetime.utcnow()
+    note = db.query(ConceptNote).filter(ConceptNote.user_id == user.id, ConceptNote.node_id == node_id).first()
+    if not note:
+        note = ConceptNote(user_id=user.id, node_id=node_id, content=req.content, updated_at=now)
+        db.add(note)
+    else:
+        note.content = req.content
+        note.updated_at = now
+
+    db.commit()
+    db.refresh(note)
+    return LessonNoteResponse(id=note.id, node_id=node_id, content=note.content, updated_at=note.updated_at)
+
+@router.delete("/nodes/{node_id}/notes")
+def delete_user_lesson_note(node_id: str, clerk_id: Optional[str] = None, db: Session = Depends(get_db)):
+    user = _get_or_create_user(db, clerk_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note = db.query(ConceptNote).filter(ConceptNote.user_id == user.id, ConceptNote.node_id == node_id).first()
+    if note:
+        db.delete(note)
+        db.commit()
+
+    return {"message": "Note deleted successfully", "node_id": node_id}
+
+@router.get("/nodes/{node_id}/takeaways", response_model=LessonTakeawaysResponse)
+def get_lesson_takeaways_endpoint(node_id: str, db: Session = Depends(get_db)):
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+    return _get_lesson_takeaways_helper(db, node)
+
+@router.get("/nodes/{node_id}/tips", response_model=LessonTipsResponse)
+def get_lesson_tips_endpoint(node_id: str, db: Session = Depends(get_db)):
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+    return _get_lesson_tips_helper(db, node)
+
+@router.get("/nodes/{node_id}/resources", response_model=List[LessonResourceItemResponse])
+def get_lesson_resources_endpoint(node_id: str, db: Session = Depends(get_db)):
+    node = db.query(RoadmapNode).filter(RoadmapNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Roadmap node not found")
+    return _get_lesson_resources_helper(db, node)
+
 
 
 

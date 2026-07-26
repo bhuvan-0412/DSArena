@@ -83,3 +83,36 @@ class LearningChecklist(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "node_id", name="uq_user_node_checklist"),
     )
+
+class LessonSummary(Base):
+    __tablename__ = "lesson_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    node_id = Column(String, ForeignKey("roadmap_nodes.id", ondelete="CASCADE"), nullable=False, index=True)
+    summary = Column(Text, nullable=True)
+    important_concepts = Column(JSON, nullable=True)
+    definitions = Column(JSON, nullable=True)
+    interview_points = Column(JSON, nullable=True)
+    common_mistakes = Column(JSON, nullable=True)
+    best_practices = Column(JSON, nullable=True)
+    things_to_remember = Column(JSON, nullable=True)
+    interview_tips = Column(JSON, nullable=True)
+
+    node = relationship("RoadmapNode")
+
+class LessonResource(Base):
+    __tablename__ = "lesson_resources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    node_id = Column(String, ForeignKey("roadmap_nodes.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    type = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    order_index = Column(Integer, default=1)
+
+    node = relationship("RoadmapNode")
+
+# Model Alias for ConceptNote
+LessonNote = ConceptNote
+

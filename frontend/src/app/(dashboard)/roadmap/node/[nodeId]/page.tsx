@@ -16,6 +16,12 @@ import { LessonNavigation, NavigationNode } from "@/components/roadmap/LessonNav
 import { CompletionBanner } from "@/components/roadmap/CompletionBanner";
 import { CompletionDialog } from "@/components/roadmap/CompletionDialog";
 
+import { LessonTabs, LessonTabType } from "@/components/roadmap/LessonTabs";
+import { NotesPanel } from "@/components/roadmap/NotesPanel";
+import { SummaryCard, TakeawaysData } from "@/components/roadmap/SummaryCard";
+import { TipCard, TipsData } from "@/components/roadmap/TipCard";
+import { ResourceCard, ResourceItem } from "@/components/roadmap/ResourceCard";
+
 interface NodeData {
   id: string;
   title: string;
@@ -49,6 +55,13 @@ interface NodeData {
   } | null;
 }
 
+interface HubData {
+  notes?: { id: number; node_id: string; content: string; updated_at?: string | null };
+  takeaways?: TakeawaysData;
+  tips?: TipsData;
+  resources?: ResourceItem[];
+}
+
 interface RoadmapProgressStats {
   totalVideos: number;
   completedVideos: number;
@@ -64,6 +77,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
   const clerkId = stats?.clerk_id || "mock_user_striver";
 
   const [node, setNode] = useState<NodeData | null>(null);
+  const [hubData, setHubData] = useState<HubData | null>(null);
   const [previousNode, setPreviousNode] = useState<NavigationNode | null>(null);
   const [nextNode, setNextNode] = useState<NavigationNode | null>(null);
   const [allLessons, setAllLessons] = useState<SidebarLessonNode[]>([]);
@@ -73,6 +87,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
     progressPercentage: 0,
   });
 
+  const [activeTab, setActiveTab] = useState<LessonTabType>("learn");
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,9 +102,10 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
         setLoading(true);
         setError(null);
 
-        // Parallel fetch for lesson details, prev, next, nodes tree, and progress
-        const [nodeRes, prevRes, nextRes, nodesRes, progressRes] = await Promise.all([
+        // Parallel fetch for lesson details, hub content, prev, next, nodes tree, and progress
+        const [nodeRes, hubRes, prevRes, nextRes, nodesRes, progressRes] = await Promise.all([
           fetch(`${BACKEND_URL}/roadmap/nodes/${nodeId}?clerk_id=${clerkId}`),
+          fetch(`${BACKEND_URL}/roadmap/nodes/${nodeId}/hub?clerk_id=${clerkId}`),
           fetch(`${BACKEND_URL}/roadmap/nodes/${nodeId}/previous?clerk_id=${clerkId}`),
           fetch(`${BACKEND_URL}/roadmap/nodes/${nodeId}/next?clerk_id=${clerkId}`),
           fetch(`${BACKEND_URL}/roadmap/all_topics?clerk_id=${clerkId}`),
@@ -102,6 +118,14 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
         const nodeData: NodeData = await nodeRes.json();
         setNode(nodeData);
+
+        if (hubRes.ok) {
+          const hubDataObj: HubData = await hubRes.json();
+          setHubData(hubDataObj);
+          if (hubDataObj.notes?.content) {
+            setQuickNoteText(hubDataObj.notes.content);
+          }
+        }
 
         if (prevRes.ok) {
           const prevData = await prevRes.json();
@@ -218,11 +242,11 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
   if (!isLoaded || loading) {
     return (
       <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 pb-20 animate-pulse">
-        {/* Top header skeleton */}
         <div className="h-6 w-36 bg-zinc-900 rounded-xl" />
         <div className="h-10 w-2/3 bg-zinc-900 rounded-2xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            <div className="h-12 w-full bg-zinc-900 rounded-2xl" />
             <div className="aspect-video w-full bg-zinc-900 rounded-3xl" />
             <div className="h-40 w-full bg-zinc-900 rounded-3xl" />
           </div>
@@ -257,9 +281,56 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
   const isCompleted = node.status === "COMPLETED" || Boolean(node.progress?.completed);
 
+  // Tab 1 Learn Content Node
+  const learnTabContent = (
+    <div className="space-y-6">
+      {/* Video Player */}
+      <VideoPlayer
+        youtubeUrl={node.youtube_url}
+        videoId={node.youtube_video_id}
+        thumbnailUrl={node.thumbnail_url}
+        title={node.title}
+      />
+
+      {/* Learning Objectives */}
+      <LearningObjectivesCard
+        objectives={node.learning_objectives}
+        lessonTitle={node.title}
+      />
+
+      {/* Prerequisites */}
+      <PrerequisiteCard prerequisites={node.prerequisites_details} />
+    </div>
+  );
+
+  // Tab 2 Notes Content Node
+  const notesTabContent = (
+    <NotesPanel
+      nodeId={node.id}
+      clerkId={clerkId}
+      initialContent={hubData?.notes?.content || quickNoteText}
+      onNoteUpdated={(txt) => setQuickNoteText(txt)}
+    />
+  );
+
+  // Tab 3 Key Takeaways Content Node
+  const takeawaysTabContent = (
+    <SummaryCard takeaways={hubData?.takeaways} lessonTitle={node.title} />
+  );
+
+  // Tab 4 Tips Content Node
+  const tipsTabContent = (
+    <TipCard tips={hubData?.tips} lessonTitle={node.title} />
+  );
+
+  // Tab 5 Resources Content Node
+  const resourcesTabContent = (
+    <ResourceCard resources={hubData?.resources} />
+  );
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 pb-24">
-      {/* Top Header Bar */}
+      {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
         <Link href="/roadmap">
           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
@@ -279,33 +350,24 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
         status={node.status}
       />
 
-      {/* Two Column Layout */}
+      {/* Two Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* LEFT COLUMN (Learning & Content) */}
+        {/* LEFT COLUMN: 5-Tab Knowledge Hub (Learn, Notes, Takeaways, Tips, Resources) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Embedded YouTube Video Player */}
-          <div className="space-y-2">
-            <VideoPlayer
-              youtubeUrl={node.youtube_url}
-              videoId={node.youtube_video_id}
-              thumbnailUrl={node.thumbnail_url}
-              title={node.title}
-            />
-          </div>
-
-          {/* Learning Objectives */}
-          <LearningObjectivesCard
-            objectives={node.learning_objectives}
-            lessonTitle={node.title}
+          <LessonTabs
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab)}
+            learnContent={learnTabContent}
+            notesContent={notesTabContent}
+            takeawaysContent={takeawaysTabContent}
+            tipsContent={tipsTabContent}
+            resourcesContent={resourcesTabContent}
           />
-
-          {/* Prerequisites */}
-          <PrerequisiteCard prerequisites={node.prerequisites_details} />
         </div>
 
-        {/* RIGHT COLUMN (Progress & Sidebar) */}
+        {/* RIGHT COLUMN: Status, Progress, Quick Notes & Sidebar */}
         <div className="space-y-6">
-          {/* Completion Banner / Card */}
+          {/* Completion Banner */}
           <CompletionBanner
             isCompleted={isCompleted}
             completing={completing}
@@ -315,7 +377,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             hasNextNode={Boolean(nextNode)}
           />
 
-          {/* Progress Card */}
+          {/* Progress Metrics Summary */}
           <ProgressCard
             completedCount={progressStats.completedVideos}
             totalCount={progressStats.totalVideos}
@@ -324,7 +386,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             lessonStatus={node.status}
           />
 
-          {/* Quick Notes Placeholder */}
+          {/* Quick Notes Widget */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 space-y-3 shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
@@ -336,17 +398,17 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             <textarea
               value={quickNoteText}
               onChange={(e) => setQuickNoteText(e.target.value)}
-              placeholder="Jot down key formulas, time complexities, or insights for revision..."
+              placeholder="Jot down quick thoughts or revision formulas..."
               className="w-full h-24 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 resize-none font-mono"
             />
           </div>
 
-          {/* Sidebar Roadmap Navigation */}
+          {/* Sidebar Roadmap */}
           <LessonSidebar currentNodeId={node.id} lessons={allLessons} />
         </div>
       </div>
 
-      {/* Footer Lesson Navigation */}
+      {/* Lesson Navigation Footer */}
       <LessonNavigation
         previousNode={previousNode}
         currentNode={{ id: node.id, title: node.title }}
@@ -355,7 +417,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
         onNavigateNext={handleGoToNextNode}
       />
 
-      {/* Completion Dialog Popup */}
+      {/* Completion Celebration Modal */}
       <CompletionDialog
         isOpen={showCompletionDialog}
         onClose={() => setShowCompletionDialog(false)}

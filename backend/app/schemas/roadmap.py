@@ -208,6 +208,52 @@ class ConceptNoteResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Sprint R1.3 Lesson Knowledge Hub Schemas
+class LessonNoteRequest(BaseModel):
+    content: str
+
+class LessonNoteResponse(BaseModel):
+    id: int = 0
+    node_id: str
+    content: str = ""
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class LessonTakeawaysResponse(BaseModel):
+    summary: str = ""
+    important_concepts: List[str] = []
+    definitions: List[Dict[str, str]] = []
+    interview_points: List[str] = []
+
+class LessonTipsResponse(BaseModel):
+    common_mistakes: List[str] = []
+    best_practices: List[str] = []
+    things_to_remember: List[str] = []
+    interview_tips: List[str] = []
+
+class LessonResourceItemResponse(BaseModel):
+    id: int = 0
+    node_id: str
+    title: str
+    description: Optional[str] = None
+    type: str
+    url: str
+    order_index: int = 1
+
+    class Config:
+        from_attributes = True
+
+class LessonKnowledgeHubResponse(BaseModel):
+    node_id: str
+    title: str
+    notes: LessonNoteResponse
+    takeaways: LessonTakeawaysResponse
+    tips: LessonTipsResponse
+    resources: List[LessonResourceItemResponse] = []
+
+
 class BookmarkToggleRequest(BaseModel):
     target_type: str  # 'concept', 'problem', 'resource'
     target_id: str
