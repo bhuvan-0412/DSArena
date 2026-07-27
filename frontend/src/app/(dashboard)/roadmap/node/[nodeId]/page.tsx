@@ -34,14 +34,14 @@ interface NodeData {
   is_locked: boolean;
   status: string;
   prerequisites?: string[];
-  prerequisites_details?: any[];
+  prerequisites_details?: unknown[];
   learning_objectives?: {
     what_you_will_learn?: string[];
     why_this_topic_matters?: string | null;
     real_world_applications?: string[];
     interview_questions?: string[];
   } | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   progress?: {
     user_id: number;
     node_id: string;
@@ -135,15 +135,15 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
         if (nodesRes.ok) {
           const rawNodes = await nodesRes.json();
           const mappedLessons: SidebarLessonNode[] = (Array.isArray(rawNodes) ? rawNodes : []).map(
-            (item: any) => ({
-              id: item.id,
-              title: item.title,
-              order: item.order || item.order_index || 1,
-              status: item.status || (item.is_completed ? "COMPLETED" : "LOCKED"),
-              is_completed: item.is_completed || item.status === "COMPLETED",
-              is_locked: item.is_locked,
-              parent_id: item.parent_id,
-              parent_title: item.parent_title || item.step_title || "DSA Roadmap",
+            (item: Record<string, unknown>) => ({
+              id: String(item.id || ""),
+              title: String(item.title || ""),
+              order: Number(item.order || item.order_index || 1),
+              status: String(item.status || (item.is_completed ? "COMPLETED" : "LOCKED")),
+              is_completed: Boolean(item.is_completed || item.status === "COMPLETED"),
+              is_locked: Boolean(item.is_locked),
+              parent_id: item.parent_id ? String(item.parent_id) : undefined,
+              parent_title: String(item.parent_title || item.step_title || "DSA Roadmap"),
             })
           );
           setAllLessons(mappedLessons);
@@ -157,9 +157,10 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             progressPercentage: progData.progress_percentage || 0,
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unable to fetch lesson data.";
         console.error("Error loading lesson page:", err);
-        setError(err.message || "Unable to fetch lesson data.");
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -306,7 +307,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
       {/* Top Navigation Bar & Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-4">
         <RoadmapBreadcrumbs
-          stepTitle={node.metadata?.step_title || "Striver Roadmap"}
+          stepTitle={typeof node.metadata?.step_title === "string" ? node.metadata.step_title : "Striver Roadmap"}
           sectionTitle={node.parent_title}
           lessonTitle={node.title}
         />
@@ -348,7 +349,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
           <CompletionBanner
             isCompleted={isCompleted}
             completing={completing}
-            xpReward={node.metadata?.xp_reward || 100}
+            xpReward={typeof node.metadata?.xp_reward === "number" ? node.metadata.xp_reward : 100}
             onMarkAsDone={handleMarkAsDone}
             onContinueLearning={handleGoToNextNode}
             hasNextNode={Boolean(nextNode)}

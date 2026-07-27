@@ -2,21 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Compass, User, Trophy, LogOut } from "lucide-react";
+import { LayoutDashboard, Compass, User, Trophy, Settings, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { SignOutButton } from "@clerk/nextjs";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { isSignedIn } = useAuthUser();
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const { isSignedIn, userDisplayName, userEmail, userAvatarUrl, signOut } = useAuthUser();
 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Roadmap", href: "/roadmap", icon: Compass },
     { name: "Contests", href: "/contests", icon: Trophy },
     { name: "Profile & Badges", href: "/profile", icon: User },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
@@ -69,27 +68,35 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer Info or Logout */}
-      <div className="border-t border-card-border pt-4">
-        {isSignedIn ? (
-          publishableKey ? (
-            <SignOutButton>
-              <button className="flex w-full items-center gap-3 px-4 py-3 text-muted-foreground hover:text-destructive rounded-xl transition-colors duration-300 hover:bg-destructive/5 cursor-pointer">
-                <LogOut className="w-5 h-5" />
-                <span>Log Out</span>
-              </button>
-            </SignOutButton>
-          ) : (
-            <button className="flex w-full items-center gap-3 px-4 py-3 text-muted-foreground hover:text-destructive rounded-xl transition-colors duration-300 hover:bg-destructive/5 cursor-pointer" onClick={() => window.location.href = "/"}>
-              <LogOut className="w-5 h-5" />
-              <span>Exit Arena (Mock)</span>
-            </button>
-          )
-        ) : (
-          <div className="text-xs text-muted-foreground text-center">
-            Unauthenticated
+      {/* User Info & Logout Footer */}
+      <div className="border-t border-card-border pt-4 space-y-3">
+        {isSignedIn && (
+          <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl bg-slate-900/40 border border-slate-800/60">
+            <img
+              src={userAvatarUrl}
+              alt={userDisplayName}
+              className="w-8 h-8 rounded-full border border-primary/30 object-cover"
+              onError={(e) => {
+                (e.target as HTMLElement).setAttribute(
+                  "src",
+                  `https://api.dicebear.com/7.x/bottts/svg?seed=${userEmail}`
+                );
+              }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-white truncate">{userDisplayName}</p>
+              <p className="text-[10px] text-slate-400 truncate">{userEmail}</p>
+            </div>
           </div>
         )}
+
+        <button
+          onClick={() => signOut()}
+          className="flex w-full items-center gap-3 px-4 py-2.5 text-muted-foreground hover:text-destructive rounded-xl transition-colors duration-300 hover:bg-destructive/10 cursor-pointer text-xs font-semibold"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );

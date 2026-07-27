@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, roadmap, ai, adaptive, interview, engagement, contest, admin
+from app.api.v1 import auth, users, roadmap, ai, adaptive, interview, engagement, contest, admin, activity
 
 api_router = APIRouter()
 
@@ -12,4 +12,5 @@ api_router.include_router(interview.router, prefix="/interview", tags=["intervie
 api_router.include_router(engagement.router, prefix="/engagement", tags=["engagement"])
 api_router.include_router(contest.router, prefix="/contests", tags=["contests"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(activity.router, prefix="/activity", tags=["activity"])
 

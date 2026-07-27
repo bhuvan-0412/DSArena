@@ -16,15 +16,18 @@ import random
 
 router = APIRouter()
 
-def get_or_create_user(db: Session, clerk_id: str) -> User:
+def get_or_create_user(db: Session, clerk_id: str, email: Optional[str] = None, avatar_url: Optional[str] = None) -> User:
     user = db.query(User).filter(User.clerk_id == clerk_id).first()
+    if not user and email:
+        user = db.query(User).filter(User.email == email).first()
     if not user:
         username = clerk_id.replace("user_", "").replace("mock_user_", "")
         user = User(
             clerk_id=clerk_id,
-            email=f"{clerk_id}@example.com",
+            email=email if email else f"{clerk_id}@example.com",
             username=username if username else "Gladiator",
             display_name="Gladiator",
+            avatar_url=avatar_url,
             xp=0,
             level=1,
             rank="Unranked",
@@ -34,6 +37,17 @@ def get_or_create_user(db: Session, clerk_id: str) -> User:
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        updated = False
+        if user.clerk_id != clerk_id:
+            user.clerk_id = clerk_id
+            updated = True
+        if avatar_url and user.avatar_url != avatar_url:
+            user.avatar_url = avatar_url
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(user)
     return user
 
 @router.get("/{clerk_id}", response_model=UserResponse)

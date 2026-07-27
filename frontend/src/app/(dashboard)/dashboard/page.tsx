@@ -8,8 +8,10 @@ import { ArrowRight, Sparkles, Sword, Loader2, Trophy } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { LearningActivityHeatmap } from "@/components/activity/learning-activity-heatmap";
+
 export default function DashboardPage() {
-  const { stats, user, isLoaded } = useAuthUser();
+  const { stats, isLoaded, userDisplayName } = useAuthUser();
 
   if (!isLoaded || !stats) {
     return (
@@ -20,7 +22,7 @@ export default function DashboardPage() {
     );
   }
 
-  const displayName = stats.display_name || user?.fullName || "Coder";
+  const displayName = stats.display_name || userDisplayName || "Coder";
 
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto px-2 sm:px-4">
@@ -113,7 +115,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4. Recent Activity Stream */}
+      {/* 4. Learning Activity Heatmap */}
+      <LearningActivityHeatmap />
+
+      {/* 5. Recent Activity Stream */}
       <RecentProgress />
     </div>
   );

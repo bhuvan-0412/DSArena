@@ -55,7 +55,7 @@ def log_xp(db: Session, user: User, amount: int, action: str):
     db.add(xp_log)
     db.commit()
 
-def update_activity(db: Session, user_id: int, xp_gained: int, problems_solved: int, duration_seconds: int):
+def update_activity(db: Session, user_id: int, xp_gained: int, problems_solved: int, duration_seconds: int, lessons_completed: int = 0, topics_completed: int = 0):
     """
     Updates the DailyActivity log for the user.
     """
@@ -76,14 +76,22 @@ def update_activity(db: Session, user_id: int, xp_gained: int, problems_solved: 
             user_id=user_id,
             date=today_str,
             problems_solved=problems_solved,
+            lessons_completed=lessons_completed,
+            topics_completed=topics_completed,
             xp_earned=xp_gained,
-            study_duration_seconds=duration_seconds
+            study_duration_seconds=duration_seconds,
+            streak_active=True
         )
         db.add(activity)
     else:
         activity.problems_solved += problems_solved
+        if hasattr(activity, "lessons_completed"):
+            activity.lessons_completed += lessons_completed
+        if hasattr(activity, "topics_completed"):
+            activity.topics_completed += topics_completed
         activity.xp_earned += xp_gained
         activity.study_duration_seconds += duration_seconds
+        activity.streak_active = True
     
     db.commit()
 

@@ -8,11 +8,8 @@ import {
   ChevronsUp,
   Target,
   RotateCcw,
-  History,
-  Play,
-  Clock
+  History
 } from "lucide-react";
-import { RoadmapNode } from "./LessonRow";
 
 interface RecentlyViewedLesson {
   id: string;
@@ -40,14 +37,14 @@ export function RoadmapQuickActions({
   const [showRecentDropdown, setShowRecentDropdown] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 shadow-md">
+    <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5 shadow-sm">
       {/* Left Quick Navigation Buttons */}
       <div className="flex items-center space-x-2 flex-wrap gap-y-2">
         {/* Resume Last Lesson */}
         <button
           type="button"
           onClick={onResumeLastLesson}
-          className="flex items-center space-x-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center space-x-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Resume Last Lesson</span>
@@ -57,7 +54,7 @@ export function RoadmapQuickActions({
         <button
           type="button"
           onClick={onJumpToCurrentStep}
-          className="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
         >
           <Target className="w-3.5 h-3.5 text-indigo-400" />
           <span>Jump to Current Step</span>
@@ -69,7 +66,7 @@ export function RoadmapQuickActions({
             <button
               type="button"
               onClick={() => setShowRecentDropdown(!showRecentDropdown)}
-              className="flex items-center space-x-1.5 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center space-x-1.5 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               <History className="w-3.5 h-3.5 text-amber-400" />
               <span>Recently Viewed ({recentlyViewed.length})</span>
@@ -95,7 +92,7 @@ export function RoadmapQuickActions({
                         if (onSelectRecentLesson) onSelectRecentLesson(item.id);
                         setShowRecentDropdown(false);
                       }}
-                      className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-xs text-slate-200 transition-colors truncate"
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-xs text-slate-200 transition-colors truncate cursor-pointer"
                     >
                       <div className="font-semibold truncate">{item.title}</div>
                       {item.stepTitle && (
@@ -115,7 +112,7 @@ export function RoadmapQuickActions({
         <button
           type="button"
           onClick={onExpandAll}
-          className="flex items-center space-x-1 text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800/80 px-2.5 py-1.5 rounded-lg transition-colors"
+          className="flex items-center space-x-1 text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800/80 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
         >
           <ChevronsDown className="w-3.5 h-3.5 text-cyan-400" />
           <span>Expand All</span>
@@ -124,7 +121,7 @@ export function RoadmapQuickActions({
         <button
           type="button"
           onClick={onCollapseAll}
-          className="flex items-center space-x-1 text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800/80 px-2.5 py-1.5 rounded-lg transition-colors"
+          className="flex items-center space-x-1 text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800/80 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
         >
           <ChevronsUp className="w-3.5 h-3.5 text-amber-400" />
           <span>Collapse All</span>

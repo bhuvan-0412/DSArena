@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { MarkdownEditor } from "./MarkdownEditor";
-import { FileText, Save, Trash2, Sparkles, CheckCircle2 } from "lucide-react";
+import { FileText, Save, Sparkles } from "lucide-react";
 
 interface NotesPanelProps {
   nodeId: string;

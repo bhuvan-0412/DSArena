@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Compass, Flame, ShieldAlert, Sparkles, Sword, Trophy, Zap, ArrowRight } from "lucide-react";
+import { Compass, Flame, Sparkles, Sword, Trophy, Zap, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthUser } from "@/hooks/use-auth-user";
 
@@ -11,7 +11,7 @@ export default function LandingPage() {
   const features = [
     {
       title: "Duolingo for DSA",
-      desc: "Bite-sized problem solving, XP logging, levels, and rank progressions to make learning fun and consistent.",
+      desc: "Bite-sized problem solving, XP logging, level progression, and daily streaks to make learning fun and consistent.",
       icon: Zap,
       color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
     },

@@ -730,7 +730,8 @@ def complete_topic_activity(
     if xp_gained > 0:
         from app.core.learning import log_xp, update_activity, update_mission_progress, check_and_unlock_achievements, rollup_node_progress
         log_xp(db, user, xp_gained, f"complete_{activity_type}_{topic_id}")
-        update_activity(db, user.id, xp_gained, 0, 120 if activity_type == "notes" else 300)
+        is_lesson = 1 if activity_type in ["video", "notes"] else 0
+        update_activity(db, user.id, xp_gained, 0, 120 if activity_type == "notes" else 300, lessons_completed=is_lesson)
         
         mission_action = f"read_{topic_id}" if activity_type == "notes" else f"complete_quiz" if activity_type == "quiz" else f"watch_{topic_id}"
         update_mission_progress(db, user.id, mission_action)
@@ -788,7 +789,7 @@ def complete_boss_battle(
     from app.core.learning import log_xp, update_activity, check_and_unlock_achievements, rollup_node_progress
     xp_gained = 500
     log_xp(db, user, xp_gained, f"boss_battle_{topic_id}")
-    update_activity(db, user.id, xp_gained, 0, 600)
+    update_activity(db, user.id, xp_gained, 0, 600, topics_completed=1)
     
     db.commit()
 

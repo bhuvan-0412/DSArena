@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Lock, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowLeft, Lock, CheckCircle2, Sparkles } from "lucide-react";
 
 export interface NavigationNode {
   id: string;

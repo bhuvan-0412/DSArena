@@ -12,9 +12,13 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = f"sqlite:///{DB_PATH.as_posix()}"
     
-    # Auth
+    # Auth & Supabase
     CLERK_SECRET_KEY: str = ""
     CLERK_WEBHOOK_SECRET: str = ""
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""
 
     model_config = ConfigDict(case_sensitive=True, env_file=".env")
 

@@ -199,9 +199,6 @@ export default function ProfilePage() {
               <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-muted text-muted-foreground border border-card-border">
                 Level {stats.level}
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-primary/15 text-primary border border-primary/25">
-                {stats.rank} Rank
-              </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-orange-950/20 text-orange-500 border border-orange-500/20">
                 {stats.current_streak} Day Streak
               </span>

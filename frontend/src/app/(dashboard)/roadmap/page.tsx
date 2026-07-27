@@ -325,7 +325,7 @@ export default function RoadmapPage() {
   }
 
   return (
-    <div className="space-y-6 pb-20 max-w-6xl mx-auto px-3 sm:px-6">
+    <div className="space-y-4 pb-16 max-w-6xl mx-auto px-2 sm:px-4">
       {/* 1. TOP HEADER & CONTINUE LEARNING CARD */}
       <RoadmapHeader
         userName={stats?.display_name || "Coder"}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Award, Flame, Zap, Star, ShieldCheck, Lock } from "lucide-react";
+import { Award, Flame, Zap, ShieldCheck, Lock } from "lucide-react";
 
 interface Achievement {
   id: string;

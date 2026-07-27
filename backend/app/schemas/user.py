@@ -6,6 +6,7 @@ class UserBase(BaseModel):
     email: EmailStr
     username: Optional[str] = None
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 class UserCreate(UserBase):
     clerk_id: str
@@ -13,6 +14,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     xp: Optional[int] = None
     level: Optional[int] = None
     rank: Optional[str] = None

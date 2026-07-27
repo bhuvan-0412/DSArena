@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ChevronRight, Home, Compass, Layers, FolderTree, BookOpen } from "lucide-react";
+import { ChevronRight, Home, Compass } from "lucide-react";
 
 interface BreadcrumbItem {
   label: string;

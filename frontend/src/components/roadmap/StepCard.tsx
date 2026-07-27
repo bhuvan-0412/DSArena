@@ -43,7 +43,7 @@ export function StepCard({
   const sections = step.children || [];
   
   // Calculate total lessons and completed lessons
-  let totalSections = sections.length;
+  const totalSections = sections.length;
   let totalLessons = 0;
   let completedLessons = 0;
   let firstUnlockedLesson: RoadmapNode | null = null;
