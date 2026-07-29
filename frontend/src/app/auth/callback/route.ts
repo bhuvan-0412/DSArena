@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { BACKEND_URL } from "@/lib/api-config";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -21,9 +22,9 @@ export async function GET(request: Request) {
       const user = data.session.user;
 
       // Sync user profile to backend
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
       try {
-        await fetch(`${backendUrl}/auth/sync`, {
+        await fetch(`${BACKEND_URL}/auth/sync`, {
+
           method: "POST",
           headers: {
             "Content-Type": "application/json",

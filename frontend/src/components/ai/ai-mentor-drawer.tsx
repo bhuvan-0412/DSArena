@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { BACKEND_URL } from "@/lib/api-config";
 import { AISettingsModal } from "./ai-settings-modal";
 import {
   Bot, Sparkles, Send, Lightbulb, Code2, Calendar, Mic, Settings,
   ChevronRight, RefreshCw, X, Maximize2, Minimize2, Check, Copy, AlertCircle
 } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+
 
 interface MessageItem {
   id?: number;

@@ -26,7 +26,8 @@ interface RecentlyViewedLesson {
   stepTitle?: string;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function RoadmapPage() {
   const router = useRouter();

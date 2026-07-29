@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { CheckCircle2, Loader2, Video } from "lucide-react";
+import { BACKEND_URL } from "@/lib/api-config";
 
 interface RecentActivity {
   id: string;
@@ -14,7 +15,7 @@ interface RecentActivity {
   time: string;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+
 
 export default function RecentProgress() {
   const { stats, isLoaded } = useAuthUser();

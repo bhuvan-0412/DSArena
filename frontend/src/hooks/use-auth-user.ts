@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSupabaseAuth } from "@/components/auth/supabase-provider";
+import { BACKEND_URL } from "@/lib/api-config";
 
 export interface UserStats {
   id: number;
@@ -17,7 +18,7 @@ export interface UserStats {
   max_streak: number;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+
 
 export function useAuthUser() {
   const { user: supabaseUser, session, isLoading: isSupabaseLoading, signOut, signInWithGoogle } = useSupabaseAuth();

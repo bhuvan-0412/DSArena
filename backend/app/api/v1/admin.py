@@ -220,6 +220,7 @@ def build_curriculum_audit_cache(db: Session):
         "node_validations": node_validations
     }
 
+@router.get("/curriculum/summary", response_model=CurriculumSummaryResponse)
 @router.get("/summary", response_model=CurriculumSummaryResponse)
 def get_curriculum_summary(db: Session = Depends(get_db)):
     """
@@ -260,6 +261,7 @@ def get_curriculum_summary(db: Session = Depends(get_db)):
         failed_lessons_count=failed_count
     )
 
+@router.get("/curriculum/tree", response_model=List[CurriculumTreeNode])
 @router.get("/tree", response_model=List[CurriculumTreeNode])
 def get_curriculum_tree(db: Session = Depends(get_db)):
     """
@@ -294,8 +296,10 @@ def get_curriculum_tree(db: Session = Depends(get_db)):
     tree = [build_node(s) for s in root_steps]
     return tree
 
+@router.get("/curriculum/lesson/{lesson_id}", response_model=LessonDetailResponse)
 @router.get("/lesson/{lesson_id}", response_model=LessonDetailResponse)
 def get_lesson_detail(lesson_id: str, db: Session = Depends(get_db)):
+
     """
     Get full details for a single lesson including parent hierarchy, video iframe embed, and validation checklist.
     """

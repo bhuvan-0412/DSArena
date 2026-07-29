@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { FileText, Save, Sparkles } from "lucide-react";
+import { BACKEND_URL } from "@/lib/api-config";
 
 interface NotesPanelProps {
   nodeId: string;
@@ -11,7 +12,7 @@ interface NotesPanelProps {
   onNoteUpdated?: (newContent: string) => void;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+
 
 export function NotesPanel({
   nodeId,

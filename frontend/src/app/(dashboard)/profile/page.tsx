@@ -62,7 +62,8 @@ interface TimelineData {
   calendar: { date: string; count: number; xp: number; duration: number }[];
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function ProfilePage() {
   const { stats, isLoaded } = useAuthUser();

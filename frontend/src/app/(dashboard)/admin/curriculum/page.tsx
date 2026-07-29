@@ -27,8 +27,8 @@ import {
   Tag,
   ShieldCheck
 } from "lucide-react";
+import { BACKEND_URL } from "@/lib/api-config";
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
 
 interface SummaryData {
   total_steps: number;

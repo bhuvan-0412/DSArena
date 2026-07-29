@@ -46,7 +46,8 @@ interface VictoryData {
   newly_unlocked_achievements?: Achievement[];
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function ProblemPage({ params }: { params: Promise<{ topicId: string; problemId: string }> }) {
   const { topicId, problemId } = use(params);

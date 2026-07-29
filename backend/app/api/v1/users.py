@@ -511,9 +511,7 @@ def get_user_recent_activity(clerk_id: str, db: Session = Depends(get_db)):
     Returns the user's recent progress activities (solved problems, unlocked achievements).
     """
     from app.models.achievement import UserAchievement
-    user = db.query(User).filter(User.clerk_id == clerk_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = get_or_create_user(db, clerk_id)
         
     activities = []
     
@@ -525,15 +523,16 @@ def get_user_recent_activity(clerk_id: str, db: Session = Depends(get_db)):
     
     for p in solved:
         prob = p.problem
-        activities.append({
-            "id": f"solved-{p.id}",
-            "type": "solved",
-            "title": prob.title,
-            "topic": prob.parent.title if prob.parent else "Unknown",
-            "difficulty": prob.difficulty,
-            "xp": f"+{prob.xp_reward} XP",
-            "time": p.completed_at
-        })
+        if prob:
+            activities.append({
+                "id": f"solved-{p.id}",
+                "type": "solved",
+                "title": prob.title,
+                "topic": prob.parent.title if prob.parent else "Unknown",
+                "difficulty": prob.difficulty or "Easy",
+                "xp": f"+{prob.xp_reward or 10} XP",
+                "time": p.completed_at
+            })
         
     # 2. Fetch recently unlocked achievements
     achievements = db.query(UserAchievement).filter(
@@ -542,24 +541,26 @@ def get_user_recent_activity(clerk_id: str, db: Session = Depends(get_db)):
     
     for ua in achievements:
         ach = ua.achievement
-        activities.append({
-            "id": f"ach-{ua.id}",
-            "type": "unlocked",
-            "title": ach.title,
-            "topic": "Achievement Unlocked",
-            "difficulty": "Badge",
-            "xp": "+100 XP",
-            "time": ua.unlocked_at
-        })
+        if ach:
+            activities.append({
+                "id": f"ach-{ua.id}",
+                "type": "unlocked",
+                "title": ach.title,
+                "topic": "Achievement Unlocked",
+                "difficulty": "Badge",
+                "xp": "+100 XP",
+                "time": ua.unlocked_at
+            })
 
-    # Sort all by time desc
-    activities = sorted(activities, key=lambda x: x["time"], reverse=True)[:5]
+    # Sort all by time desc safely
+    now = datetime.datetime.utcnow()
+    activities = sorted(activities, key=lambda x: x["time"] or now, reverse=True)[:5]
     
     # Format time friendly
     formatted = []
-    now = datetime.datetime.utcnow()
     for act in activities:
-        diff = now - act["time"]
+        act_time = act["time"] or now
+        diff = now - act_time
         if diff.days == 0:
             if diff.seconds < 3600:
                 mins = diff.seconds // 60
@@ -574,9 +575,7 @@ def get_user_recent_activity(clerk_id: str, db: Session = Depends(get_db)):
             
         act_copy = act.copy()
         act_copy["time"] = time_str
-        # Remove datetime object to avoid json serialization error
-        del act_copy["time"]
-        act_copy["time"] = time_str
         formatted.append(act_copy)
         
     return formatted
+
