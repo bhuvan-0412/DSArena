@@ -2,104 +2,130 @@
 
 # ⚔️ DSArena
 
-### **The Ultimate AI-Powered DSA Learning Platform**
+### A Modern DSA Learning Platform Built Around Striver's A2Z Sheet
 
-*Master Data Structures & Algorithms with structured video lessons, gamified progress tracking, interactive coding workspaces, and adaptive AI mentoring.*
+*Structured roadmaps, progress tracking, XP, daily streaks, and Google Authentication — all in one place.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.0%2B-black.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4%2B-38B2AC.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](#contributing)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth-3ECF8E.svg?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black.svg?logo=vercel&logoColor=white)](https://dsarena-two.vercel.app)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](#-contributing)
 
-[Explore Documentation](#architecture) · [Report Bug](https://github.com/bhuvan-0412/DSArena/issues) · [Request Feature](https://github.com/bhuvan-0412/DSArena/issues)
+[Live Demo](https://dsarena-two.vercel.app) · [Report Bug](https://github.com/bhuvan-0412/DSArena/issues) · [Request Feature](https://github.com/bhuvan-0412/DSArena/issues)
 
 ---
 
 </div>
 
+## 🌐 Live Demo
+
+| | |
+|---|---|
+| **Frontend** | [https://dsarena-two.vercel.app](https://dsarena-two.vercel.app) |
+| **Backend** | Deployment in progress |
+| **API Docs** | Available locally at `http://localhost:8000/docs` |
+
+---
+
 ## 📌 Overview
 
-**DSArena** is an open-source, full-stack educational platform designed to transform computer science students and engineers into confident algorithmic problem solvers.
+**DSArena** is an open-source, full-stack DSA learning platform that structures the entire [Striver A2Z Sheet](https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/) into an interactive, gamified learning experience.
 
-Learning Data Structures and Algorithms is notoriously difficult. Learners frequently face:
-- **Tutorial Hell & Fragmented Resources**: Jumping across disparate YouTube videos, blog posts, and problem sets without a cohesive roadmap.
-- **Lack of Structured Progression**: Difficulty tracking prerequisites, missing clear learning paths, or attempting complex problems prematurely.
-- **Inconsistent Motivation**: Losing momentum due to lack of immediate feedback, milestone rewards, or gamified progress visualization.
-
-**DSArena solves these challenges** by delivering a unified, step-by-step learning environment. Every topic in the curriculum is paired with high-quality video lessons, prerequisite dependencies, interactive code execution environments, structured learning objectives, and gamified XP rewards.
-
-> [!NOTE]
-> **Key Vision**: To build the definitive AI-assisted learning platform for competitive programming and interview preparation, combining structured curriculum progression with real-time feedback and intelligent mentorship.
+Instead of manually tracking a spreadsheet, DSArena gives you:
+- A fully navigable roadmap broken into Steps → Sections → Topics
+- Embedded YouTube video lessons for every topic
+- XP, streaks, and achievement tracking to stay motivated
+- Google sign-in via Supabase Auth
 
 ---
 
 ## ⚡ Features
 
-### 🎓 1. Learning & Curriculum Engine
-* **Hierarchical Roadmap**: Organizes DSA topics into logical Steps $\rightarrow$ Sections $\rightarrow$ Subsections $\rightarrow$ Topics.
-* **Dedicated Lesson Pages**: Centralized two-column interactive lesson interface containing video tutorials, time estimates, difficulty badges, and prerequisite checks.
-* **Structured Learning Objectives**: Every lesson outlines *What You Will Learn*, *Why This Topic Matters*, *Real-World Applications*, and *Common Interview Questions*.
-* **Sequential Unlocking & Prerequisites**: Prevents premature skipping by enforcing prerequisites. Unlocks subsequent nodes dynamically upon lesson completion.
-* **Interactive Roadmap Sidebar**: Live sticky navigation highlighting Completed (✅), Current (▶), and Locked (🔒) nodes with full revisit capability.
+### 🗺️ Roadmap & Curriculum
+- **Striver A2Z Roadmap** — complete curriculum organized into Steps, Sections, and individual topic nodes
+- **Lesson Pages** — dedicated page per topic with embedded video, notes, and lesson tabs
+- **Resume Learning** — picks up exactly where you left off
+- **Search & Filter** — find any topic across the full roadmap instantly
+- **Breadcrumb Navigation** — always know where you are in the curriculum
 
-### 💻 2. Coding Workspace & Problem Execution
-* **Monaco Code Editor**: VS Code-grade editing experience with syntax highlighting, autocomplete, and code folding.
-* **Multi-Language Support**: Write, test, and run code in Python, C++, Java, and JavaScript.
-* **Code Execution Engine**: Judge0 integration for evaluating test cases, runtime limits, and execution memory.
-* **Submission History & Trackers**: Tracks problem-solving duration, submission statuses, and optimal code snippets.
+### 📊 Progress & Gamification
+- **Progress Tracking** — per-topic and overall completion percentage
+- **XP System** — earn XP on lesson completion
+- **Daily Streaks** — maintain daily study habits
+- **Learning Activity Heatmap** — GitHub-style calendar of your study activity
+- **Achievements** — milestone badges displayed on your profile
+- **Quick Stats** — live counts of completed, in-progress, and remaining topics
 
-### 📊 3. Analytics, XP & Gamification
-* **Gamified Progression**: Earn XP rewards upon completing lessons, submitting code, and solving practice problems.
-* **Dynamic Progress Tracking**: Metrics cards for overall roadmap progress (%), completed modules, remaining modules, and estimated time to completion.
-* **Streak & Activity Heatmaps**: GitHub-style activity calendar visualizing daily study consistency.
-* **Tier & Title Rewards**: Unlock customizable user titles and seasonal pass rewards as mastery increases.
+### 🔐 Authentication
+- **Google OAuth** via Supabase Auth
+- Session persistence across page reloads
+- Protected routes — unauthenticated users are redirected to sign-in
 
-### 🤖 4. AI-Assisted Mentorship *(In Active Development)*
-* **Current AI Features**:
-  * Automated generation of structured learning objectives and interview questions for roadmap nodes.
-  * Adaptive study plan suggestions based on historical performance.
-* **Planned AI Features**:
-  * **Interactive AI Mentor**: Chat assistant providing hint-based guidance without revealing full solutions.
-  * **Automated Code Review**: AI evaluation of time/space complexity and code readability upon submission.
+### 🛠️ Admin
+- **Curriculum Management Panel** (`/admin/curriculum`) — view, audit, and manage the full roadmap tree, video coverage, and import status
 
----
-
-## 🖼️ Visual Tour & Screenshots
-
-| Dashboard & Overview | Dedicated Lesson Page |
-| :---: | :---: |
-| ![Dashboard Mockup](https://raw.githubusercontent.com/bhuvan-0412/DSArena/main/docs/assets/dashboard-mockup.png) | ![Lesson Page Mockup](https://raw.githubusercontent.com/bhuvan-0412/DSArena/main/docs/assets/lesson-page-mockup.png) |
-| *Personalized dashboard displaying overall progress, study streak, and daily roadmap recommendations.* | *Two-column lesson view featuring video player, learning objectives, prerequisites, and sidebar navigation.* |
-
-| Interactive Coding Workspace | Contest & Analytics Arena |
-| :---: | :---: |
-| ![Coding Workspace Mockup](https://raw.githubusercontent.com/bhuvan-0412/DSArena/main/docs/assets/coding-workspace-mockup.png) | ![Analytics Arena Mockup](https://raw.githubusercontent.com/bhuvan-0412/DSArena/main/docs/assets/analytics-mockup.png) |
-| *Monaco Editor with custom test cases, Judge0 code execution, and complexity analysis.* | *Detailed performance graphs, ELO rating updates, and activity heatmaps.* |
+### 🎨 UI & Experience
+- Responsive layout — works on desktop and mobile
+- Dark-mode-ready design system
+- Smooth animations and interactive hover states
+- Modern dashboard with stats, recent activity, and next steps
 
 ---
 
 ## 🛠️ Tech Stack
 
-### **Frontend**
-* **Framework**: [Next.js 15](https://nextjs.org/) (App Router, React 19)
-* **Language**: [TypeScript](https://www.typescriptlang.org/)
-* **Styling**: [Tailwind CSS v3.4](https://tailwindcss.com/) with Vanilla CSS custom utilities
-* **Icons**: [Lucide React](https://lucide.dev/)
-* **Code Editor**: [@monaco-editor/react](https://github.com/suren-atoyan/monaco-react)
+### Frontend
+| Technology | Version | Purpose |
+|---|---|---|
+| [Next.js](https://nextjs.org/) | 15 (App Router, Turbopack) | Framework |
+| [React](https://react.dev/) | 19 | UI library |
+| [TypeScript](https://www.typescriptlang.org/) | 5 | Type safety |
+| [Tailwind CSS](https://tailwindcss.com/) | 3.4 | Styling |
+| [Supabase JS](https://supabase.com/docs/reference/javascript) | 2 | Auth client |
+| [Lucide React](https://lucide.dev/) | latest | Icons |
 
-### **Backend**
-* **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
-* **ORM & Database**: [SQLAlchemy 2.0](https://www.sqlalchemy.org/) & [Alembic](https://alembic.sqlalchemy.org/) (Database migrations)
-* **API Validation**: [Pydantic v2](https://docs.pydantic.dev/)
-* **Web Server**: [Uvicorn](https://www.uvicorn.org/)
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| [FastAPI](https://fastapi.tiangolo.com/) | 0.111 | API framework |
+| [SQLAlchemy](https://www.sqlalchemy.org/) | 2.0 | ORM |
+| [Alembic](https://alembic.sqlalchemy.org/) | 1.13 | DB migrations |
+| [Pydantic](https://docs.pydantic.dev/) | 2.7 | Validation |
+| [Uvicorn](https://www.uvicorn.org/) | 0.30 | ASGI server |
+| [Python](https://www.python.org/) | 3.11 | Runtime |
 
-### **Database & Authentication**
-* **Database**: SQLite (Development) / PostgreSQL (Production ready)
-* **Authentication**: Clerk Authentication integration (JWT-based user sessions & fallback mock auth for local development)
+### Infrastructure
+| Service | Role |
+|---|---|
+| [Supabase](https://supabase.com/) | Authentication (Google OAuth) + PostgreSQL (production) |
+| [Vercel](https://vercel.com/) | Frontend hosting |
+| SQLite | Local development database |
+
+---
+
+## 🏗️ Architecture
+
+```
+User (Browser)
+     │
+     ▼
+Next.js 15 Frontend  ──── Supabase Auth (Google OAuth)
+     │
+     ▼
+FastAPI Backend  (REST API / JSON)
+     │
+     ▼
+SQLAlchemy ORM
+     │
+     ├── SQLite (local development)
+     └── PostgreSQL via Supabase (production)
+```
+
+Authentication is handled entirely through **Supabase Auth**. The frontend obtains a session token after Google OAuth and passes it to the backend for user identity resolution.
 
 ---
 
@@ -107,348 +133,277 @@ Learning Data Structures and Algorithms is notoriously difficult. Learners frequ
 
 ```
 DSArena/
-├── backend/                        # FastAPI Python Backend
-│   ├── alembic/                    # Database migration scripts
+├── backend/                          # FastAPI Python backend
+│   ├── alembic/                      # Database migration scripts
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── endpoints.py        # Core API router aggregator
-│   │   │   └── v1/                 # Version 1 API endpoints
-│   │   │       ├── adaptive.py     # Adaptive learning endpoints
-│   │   │       ├── ai.py           # AI prompt & mentor endpoints
-│   │   │       ├── auth.py         # Clerk auth sync endpoints
-│   │   │       ├── contest.py      # Virtual contest endpoints
-│   │   │       ├── engagement.py   # Daily rewards, chests & streaks
-│   │   │       ├── interview.py    # Target company readiness
-│   │   │       ├── roadmap.py      # Roadmap nodes, lessons & progress APIs
-│   │   │       └── users.py        # User profile & XP management
+│   │   │   ├── endpoints.py          # Root API router
+│   │   │   └── v1/                   # Versioned endpoints
+│   │   │       ├── activity.py       # Heatmap & activity tracking
+│   │   │       ├── adaptive.py       # Adaptive learning logic
+│   │   │       ├── admin.py          # Admin curriculum endpoints
+│   │   │       ├── ai.py             # AI mentor endpoints
+│   │   │       ├── auth.py           # Auth sync
+│   │   │       ├── contest.py        # Contest endpoints
+│   │   │       ├── engagement.py     # Streaks & rewards
+│   │   │       ├── roadmap.py        # Roadmap, lessons & progress
+│   │   │       └── users.py          # User profile & XP
 │   │   ├── core/
-│   │   │   ├── config.py           # Application settings & environment vars
-│   │   │   └── database.py         # SQLAlchemy engine & SessionLocal setup
-│   │   ├── models/                 # SQLAlchemy Database Models
-│   │   │   ├── learning_content.py # Resources, concept notes & checklists
-│   │   │   ├── progress.py         # User node progress & problem statuses
-│   │   │   ├── quiz.py             # Interactive quiz models
-│   │   │   ├── roadmap.py          # Hierarchical RoadmapNode & Problem models
-│   │   │   └── user.py             # User accounts & XP history
-│   │   ├── schemas/                # Pydantic Request/Response Models
-│   │   │   ├── roadmap.py          # Lesson, navigation & node schemas
-│   │   │   └── user.py             # User profile schemas
-│   │   └── services/               # Business logic & external importers
-│   │       ├── excel_video_importer.py
-│   │       └── striver_importer.py
-│   ├── dsarena.db                  # Local SQLite database instance
-│   ├── main.py                     # FastAPI application entrypoint
-│   └── requirements.txt            # Python dependencies
+│   │   │   ├── config.py             # Settings & env vars
+│   │   │   └── database.py           # SQLAlchemy engine setup
+│   │   ├── models/                   # SQLAlchemy ORM models
+│   │   ├── schemas/                  # Pydantic request/response schemas
+│   │   └── services/                 # Business logic & importers
+│   ├── .env.example                  # Backend env template
+│   ├── pyrightconfig.json            # Pyright/Pylance config
+│   ├── requirements.txt              # Python dependencies
+│   └── seed.py                       # Curriculum seeder
 │
-├── frontend/                       # Next.js 15 Frontend
+├── frontend/                         # Next.js 15 frontend
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── (auth)/             # Authentication route group
-│   │   │   ├── (dashboard)/        # Main App Layout Route Group
-│   │   │   │   ├── companies/      # Company interview dashboards
-│   │   │   │   ├── contests/       # Virtual contest arena
-│   │   │   │   ├── dashboard/      # Main student dashboard
-│   │   │   │   ├── profile/        # User profile & achievements
-│   │   │   │   └── roadmap/        # Interactive roadmap view
-│   │   │   │       └── node/[nodeId]/ # Professional Lesson Page
-│   │   │   ├── globals.css         # Global Tailwind & dark mode styling
-│   │   │   ├── layout.tsx          # Root layout with font configuration
-│   │   │   └── page.tsx            # Landing page
+│   │   │   ├── (auth)/               # Auth route group
+│   │   │   ├── (dashboard)/          # Protected app routes
+│   │   │   │   ├── admin/curriculum/ # Curriculum management panel
+│   │   │   │   ├── contests/         # Contest arena
+│   │   │   │   ├── dashboard/        # Main student dashboard
+│   │   │   │   ├── profile/          # User profile & achievements
+│   │   │   │   ├── roadmap/          # Roadmap overview & lesson pages
+│   │   │   │   │   └── node/[nodeId] # Individual lesson page
+│   │   │   │   └── settings/         # User settings
+│   │   │   ├── auth/callback/        # Supabase OAuth callback
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx              # Landing page
 │   │   ├── components/
-│   │   │   ├── contest/            # Contest cards & leaderboard
-│   │   │   ├── engagement/         # Calendar, daily rewards & badges
-│   │   │   ├── interview/          # Target company readiness gauges
-│   │   │   ├── roadmap/            # Reusable Roadmap & Lesson Components
-│   │   │   │   ├── CompletionBanner.tsx
-│   │   │   │   ├── CompletionDialog.tsx
-│   │   │   │   ├── ContinueLearningButton.tsx
-│   │   │   │   ├── LearningObjectivesCard.tsx
-│   │   │   │   ├── LessonHeader.tsx
-│   │   │   │   ├── LessonNavigation.tsx
-│   │   │   │   ├── LessonSidebar.tsx
-│   │   │   │   ├── PrerequisiteCard.tsx
-│   │   │   │   ├── ProgressCard.tsx
-│   │   │   │   └── VideoPlayer.tsx
-│   │   │   └── shared/             # Sidebar, Navbar & Providers
-│   │   ├── hooks/                  # Custom React hooks (e.g. useAuthUser)
-│   │   └── middleware.ts           # Clerk auth route protection
-│   ├── package.json                # Node.js dependencies & scripts
-│   └── tsconfig.json               # TypeScript compiler config
+│   │   │   ├── activity/             # Learning activity heatmap
+│   │   │   ├── ai/                   # AI mentor drawer & settings
+│   │   │   ├── auth/                 # Supabase auth provider
+│   │   │   ├── contest/              # Contest cards & charts
+│   │   │   ├── dashboard/            # Dashboard widgets
+│   │   │   ├── engagement/           # Study calendar & engagement
+│   │   │   ├── roadmap/              # Roadmap & lesson components
+│   │   │   └── shared/               # Sidebar, navbar, providers
+│   │   ├── hooks/                    # Custom React hooks
+│   │   └── lib/
+│   │       ├── supabase/             # Supabase client (browser/server)
+│   │       └── services/             # API service layer
+│   ├── .env.local                    # Local env vars (gitignored)
+│   └── package.json
 │
-└── README.md                       # Project documentation
+├── docs/                             # Project documentation & reports
+├── supabase/
+│   └── schema.sql                    # Supabase database schema
+└── README.md
 ```
 
 ---
 
-## ⚙️ Installation & Setup Guide
+## ⚙️ Local Setup
 
-Follow these steps to set up **DSArena** locally on your machine.
-
-### **Prerequisites**
-- **Node.js**: v18.0 or higher
-- **Python**: v3.10 or higher
+### Prerequisites
+- **Node.js** v18+
+- **Python** 3.11+
 - **Git**
 
----
+### 1. Clone the Repository
 
-### **1. Clone the Repository**
 ```bash
 git clone https://github.com/bhuvan-0412/DSArena.git
 cd DSArena
 ```
 
----
+### 2. Backend Setup
 
-### **2. Backend Setup (FastAPI)**
-
-1. Navigate to the `backend` directory:
-   ```bash
-   cd backend
-   ```
-
-2. Create a virtual environment:
-   * **Windows**:
-     ```powershell
-     python -m venv .venv
-     .venv\Scripts\activate
-     ```
-   * **macOS/Linux**:
-     ```bash
-     python3 -m venv .venv
-     source .venv/bin/activate
-     ```
-
-3. Install required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. *(Optional)* Set Environment Variables:
-   Create a `.env` file inside `backend/`:
-   ```env
-   PROJECT_NAME="DSArena API"
-   DATABASE_URL="sqlite:///./dsarena.db"
-   SECRET_KEY="your-super-secret-key-for-jwt"
-   ```
-
-5. Initialize Database & Seed Curriculum:
-   ```bash
-   python seed.py
-   ```
-
-6. Start the FastAPI Development Server:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   The backend API will be live at `http://127.0.0.1:8000`. You can inspect interactive API documentation at `http://127.0.0.1:8000/docs`.
-
----
-
-### **3. Frontend Setup (Next.js)**
-
-1. Open a new terminal and navigate to the `frontend` directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install Node dependencies:
-   ```bash
-   npm install
-   ```
-
-3. *(Optional)* Configure Environment Variables:
-   Create a `.env.local` file inside `frontend/`:
-   ```env
-   NEXT_PUBLIC_API_URL="http://127.0.0.1:8000/api/v1"
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your_clerk_publishable_key"
-   CLERK_SECRET_KEY="your_clerk_secret_key"
-   ```
-
-4. Run the Next.js Development Server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and navigate to `http://localhost:3000`.
-
----
-
-## 🚀 Usage Guide
-
-### 1. **Browsing the Roadmap**
-- Navigate to the **Roadmap** section from the sidebar.
-- Topics are arranged sequentially (Step 1: Learn the Basics $\rightarrow$ Step 2: Sorting Techniques $\rightarrow$ etc.).
-- Available nodes appear highlighted; locked nodes remain restricted until prerequisites are met.
-
-### 2. **Learning via Lesson Pages**
-- Click on any unlocked topic node (e.g. `User Input / Output` or `Variables`).
-- **Watch Lesson**: Stream the embedded video tutorial directly within the page.
-- **Review Objectives**: Toggle tabs under **Learning Objectives** to study theoretical key points, real-world engineering uses, and common interview questions.
-- **Check Prerequisites**: View prerequisite dependencies required for the current node. Click prerequisite pills to revisit earlier foundational lessons.
-
-### 3. **Marking Completion & Progressing**
-- Click **Mark as Done** on the lesson page.
-- The system awards **+100 XP**, updates your overall topic completion percentage, and automatically unlocks the next lesson in sequence.
-- Click **Continue Learning** to seamlessly navigate to the next unlocked module.
-
-### 4. **Jotting Quick Notes**
-- Use the built-in **Quick Notes** notepad on the right sidebar of any lesson page to write key formulas, complex edge cases, or revision code snippets.
-
----
-
-## 🗺️ Project Roadmap & Milestones
-
-Below is the current development state of **DSArena**:
-
-- [x] **Phase 1: Core Curriculum & Roadmap Engine**
-  - [x] Hierarchical roadmap database schema (`Step` $\rightarrow$ `Section` $\rightarrow$ `Topic` $\rightarrow$ `Problem`).
-  - [x] Embedded YouTube video learning integration.
-  - [x] Sequential locking & dynamic prerequisite unlocking.
-  - [x] Dedicated 2-column interactive lesson pages (`/roadmap/node/[nodeId]`).
-
-- [x] **Phase 2: Gamification & Engagement Systems**
-  - [x] XP earning system & user profile levels.
-  - [x] Interactive study calendar & activity heatmaps.
-  - [x] Daily login rewards, chest openings & user title equips.
-
-- [ ] **Phase 3: Interactive Coding & Quiz Engine**
-  - [ ] Monaco code editor & Judge0 multi-language execution.
-  - [ ] Interactive MCQs & problem concept quizzes.
-  - [ ] Submission memory/time complexity analytics.
-
-- [ ] **Phase 4: AI Mentor & Mock Interviews**
-  - [ ] Real-time conversational AI mentor with hint-based guidance.
-  - [ ] Target company readiness evaluation & mock technical interviews.
-
----
-
-## 🏗️ Architecture & Learning Flow
-
-DSArena follows a decoupled Client-Server architecture:
-
-```mermaid
-graph TD;
-    User[User / Web Client] -->|HTTP / JSON| NextJS[Next.js 15 Frontend]
-    NextJS -->|REST API Calls| FastAPI[FastAPI Backend Engine]
-    FastAPI -->|ORM / SQL Queries| SQLite[(SQLite / PostgreSQL DB)]
-    FastAPI -->|Stream Embeds| YouTube[YouTube Video API]
-    NextJS -->|Judge0 Code Execution| Judge0[Judge0 API Engine]
-```
-
-### **Learning State Machine**
-```mermaid
-stateDiagram-v2
-    [*] --> LOCKED
-    LOCKED --> AVAILABLE: Prerequisites Completed
-    AVAILABLE --> IN_PROGRESS: User Begins Lesson / Video
-    IN_PROGRESS --> COMPLETED: Click "Mark as Done"
-    COMPLETED --> AVAILABLE: Revisit Lesson anytime
-```
-
----
-
-## 🗄️ Database Models
-
-DSArena's database is powered by SQLAlchemy models:
-
-* **`RoadmapNode`**: Polymorphic model storing steps, sections, topics, and problem nodes. Contains `title`, `slug`, `order_index`, `estimated_time`, `difficulty`, `youtube_video_id`, `prerequisites` (JSON), and `metadata` (JSON).
-* **`UserNodeProgress`**: Stores user progress per node (`status` $\in$ {`LOCKED`, `AVAILABLE`, `IN_PROGRESS`, `COMPLETED`}, `completed_at`, `started_at`).
-* **`UserProgress`**: Tracks individual coding problem submissions (`status` $\in$ {`NOT_STARTED`, `ATTEMPTED`, `SOLVED`, `MASTERED`}, `code`, `language`, `solving_time_seconds`).
-* **`User`**: Manages user accounts, Clerk IDs, total XP, current level, equipped titles, and streak statistics.
-
----
-
-## 📡 API Specification Summary
-
-FastAPI exposes clean RESTful JSON endpoints. Full OpenAPI specification available at `/docs` when running the backend.
-
-### **Roadmap & Lessons**
-* `GET /api/v1/roadmap/nodes` - Fetch complete roadmap node tree with progress.
-* `GET /api/v1/roadmap/nodes/{node_id}` - Fetch rich lesson details, video info, and learning objectives.
-* `GET /api/v1/roadmap/nodes/{node_id}/previous` - Fetch immediate previous lesson.
-* `GET /api/v1/roadmap/nodes/{node_id}/next` - Fetch immediate next lesson.
-* `GET /api/v1/roadmap/nodes/{node_id}/navigation` - Unified navigation payload.
-* `POST /api/v1/roadmap/nodes/{node_id}/complete` - Complete lesson, award XP, and unlock next node.
-
----
-
-## 🛠️ Development Workflow
-
-### **Branch Naming Conventions**
-* `feature/feature-name` (e.g. `feature/lesson-sidebar`)
-* `fix/bug-name` (e.g. `fix/navigation-lock`)
-* `docs/documentation-update`
-
-### **Commit Message Format**
-We follow standard Conventional Commits:
 ```bash
-feat: transform roadmap nodes into professional lesson pages
-fix: resolve prerequisite locking check for initial node
-docs: update architecture diagram in README
+cd backend
+
+# Create and activate virtual environment
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+
+# Seed the database with curriculum data
+python seed.py
+
+# Start the development server
+uvicorn app.main:app --reload --port 8000
 ```
+
+Backend runs at: `http://localhost:8000`  
+Interactive API docs: `http://localhost:8000/docs`
+
+### 3. Frontend Setup
+
+Open a new terminal:
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Copy and configure environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase project credentials
+
+# Start the development server
+npm run dev
+```
+
+Frontend runs at: `http://localhost:3000`
+
+---
+
+## 🔑 Environment Variables
+
+### Frontend (`frontend/.env.local`)
+
+```env
+# Supabase project credentials
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Backend API (local development)
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
+```
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL (found in project Settings → API) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key (safe to expose in browser) |
+| `NEXT_PUBLIC_API_URL` | FastAPI backend base URL |
+
+### Backend (`backend/.env`)
+
+```env
+# Supabase Auth & Service Credentials
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret
+
+# Database
+DATABASE_URL=sqlite:///dsarena.db
+```
+
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for admin operations (keep secret) |
+| `SUPABASE_JWT_SECRET` | Used to verify Supabase JWT tokens on the backend |
+| `DATABASE_URL` | SQLAlchemy connection string — SQLite for local dev, PostgreSQL for production |
+
+> [!CAUTION]
+> Never commit your `.env` or `.env.local` files. Both are listed in `.gitignore`.
+
+---
+
+## 📊 Current Status
+
+| Component | Status |
+|---|---|
+| Frontend | ✅ Deployed on Vercel |
+| Google Auth (Supabase) | ✅ Configured & live |
+| Roadmap & Lesson Pages | ✅ Implemented |
+| Progress & XP Tracking | ✅ Implemented |
+| Learning Activity Heatmap | ✅ Implemented |
+| Admin Curriculum Panel | ✅ Implemented |
+| Backend | ⏳ Deployment in progress |
+| Monaco Code Editor | 🔲 Planned |
+| AI Mentor | 🔲 Planned |
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Striver A2Z curriculum engine (Steps → Sections → Topics)
+- [x] Embedded YouTube video lessons
+- [x] XP system & progress tracking
+- [x] Daily streaks
+- [x] Learning activity heatmap
+- [x] Google Authentication via Supabase
+- [x] Admin curriculum management
+- [x] Responsive roadmap UI with search & filter
+- [ ] Backend cloud deployment
+- [ ] Leaderboards & rankings
+- [ ] Revision mode (spaced repetition)
+- [ ] Monaco code editor + Judge0 execution
+- [ ] Interactive quizzes per topic
+- [ ] Mock interview simulator
+- [ ] Contest tracker
+- [ ] Company-wise DSA sheet filters
+- [ ] AI mentor chat assistant
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the open-source community!
+Contributions are welcome! Here's how to get started:
 
-1. **Fork the Repository**
-2. **Create a Feature Branch**:
+1. **Fork** the repository
+2. **Create a feature branch**
    ```bash
-   git checkout -b feature/amazing-feature
+   git checkout -b feature/your-feature-name
    ```
-3. **Commit your Changes**:
+3. **Make your changes** and commit using [Conventional Commits](https://www.conventionalcommits.org/)
    ```bash
-   git commit -m "feat: add amazing feature"
+   git commit -m "feat: add spaced repetition revision mode"
    ```
-4. **Push to the Branch**:
+4. **Push** to your fork
    ```bash
-   git push origin feature/amazing-feature
+   git push origin feature/your-feature-name
    ```
-5. **Open a Pull Request**
+5. **Open a Pull Request** against the `main` branch
 
----
-
-## 🔮 Future Scope
-
-- **AI Mentor Integration**: Real-time LLM-powered mentor guiding users through difficult algorithmic concepts without spoiling code solutions.
-- **Adaptive Learning Engine**: Dynamically recommends target revision problems based on spaced repetition algorithms.
-- **Peer vs. Peer Arena**: Real-time 1v1 coding battles with live ratings and leaderboards.
+### Branch Naming
+| Type | Format | Example |
+|---|---|---|
+| Feature | `feature/name` | `feature/revision-mode` |
+| Bug fix | `fix/name` | `fix/auth-redirect` |
+| Docs | `docs/name` | `docs/update-readme` |
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
 
 ---
 
-## 👏 Credits
+## 👏 Credits & Acknowledgements
 
-DSArena's structured curriculum and topic hierarchy draw inspiration from **Striver's A2Z DSA Sheet** by Take U Forward. 
+DSArena's curriculum is structured around **Striver's A2Z DSA Sheet** by [Take U Forward](https://takeuforward.org/).
 
 > [!IMPORTANT]
-> **Disclaimer**: **DSArena** is an independent, open-source educational platform developed to enhance structured Data Structures & Algorithms learning through interactive lesson pages, progress tracking, gamification, and AI-assisted tools. It is not officially affiliated with or endorsed by Take U Forward or any third-party content creator.
+> DSArena is an independent, open-source project and is not officially affiliated with or endorsed by Take U Forward or any third-party content creator.
+
+- [FastAPI](https://fastapi.tiangolo.com/) — High-performance Python API framework
+- [Next.js](https://nextjs.org/) — The React framework for the web
+- [Supabase](https://supabase.com/) — Open-source Firebase alternative
+- [Tailwind CSS](https://tailwindcss.com/) — Utility-first CSS framework
+- [Lucide Icons](https://lucide.dev/) — Clean, consistent icon set
 
 ---
 
-## 🙏 Acknowledgements
+## 📫 Contact
 
-* [FastAPI](https://fastapi.tiangolo.com/) - High-performance Python web framework
-* [Next.js](https://nextjs.org/) - The React Framework for the Web
-* [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-* [Lucide Icons](https://lucide.dev/) - Beautiful & consistent icons
-* [Monaco Editor](https://microsoft.github.io/monaco-editor/) - The code editor that powers VS Code
-
----
-
-## 📫 Contact & Community
-
-* **GitHub**: [bhuvan-0412/DSArena](https://github.com/bhuvan-0412/DSArena)
-* **Issue Tracker**: [Report Bugs & Request Features](https://github.com/bhuvan-0412/DSArena/issues)
-* **Discussions**: [Community QA & Ideas](https://github.com/bhuvan-0412/DSArena/discussions)
+- **GitHub**: [bhuvan-0412/DSArena](https://github.com/bhuvan-0412/DSArena)
+- **Issues**: [Report bugs & request features](https://github.com/bhuvan-0412/DSArena/issues)
+- **Discussions**: [Community Q&A](https://github.com/bhuvan-0412/DSArena/discussions)
 
 <div align="center">
-  <sub>Built with ❤️ by the DSArena Open Source Team.</sub>
+  <sub>Built with ❤️ by the DSArena open-source team.</sub>
 </div>
