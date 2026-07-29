@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { User, Session, SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 interface SupabaseAuthContextType {
@@ -17,7 +17,7 @@ interface SupabaseAuthContextType {
   clearError: () => void;
 }
 
-const supabase = createClient();
+
 
 const SupabaseAuthContext = createContext<SupabaseAuthContextType>({
   currentUser: null,
@@ -38,7 +38,17 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Lazy ref — only created in the browser, never at module/SSR evaluation time
+  const supabaseRef = useRef<SupabaseClient | null>(null);
+  function getSupabase(): SupabaseClient {
+    if (!supabaseRef.current) {
+      supabaseRef.current = createClient();
+    }
+    return supabaseRef.current;
+  }
+
   useEffect(() => {
+    const supabase = getSupabase();
     // 1. Get Initial Session
     supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
       if (sessionError) {
@@ -68,6 +78,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const signInWithGoogle = async () => {
     setError(null);
     try {
+      const supabase = getSupabase();
       const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -95,7 +106,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error: signOutError } = await supabase.auth.signOut();
+      const { error: signOutError } = await getSupabase().auth.signOut();
       if (signOutError) console.error("Supabase signOut error:", signOutError.message);
     } catch (err) {
       console.error("Unexpected signOut error:", err);

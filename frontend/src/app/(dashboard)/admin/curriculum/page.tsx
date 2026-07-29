@@ -1,5 +1,8 @@
 "use client";
 
+// Prevent static generation — this page is authenticated and requires live backend data
+export const dynamic = "force-dynamic";
+
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Layers,

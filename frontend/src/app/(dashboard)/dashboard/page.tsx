@@ -1,5 +1,8 @@
 "use client";
 
+// Prevent static generation — requires live user auth and backend data
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import StatsGrid from "@/components/dashboard/stats-grid";

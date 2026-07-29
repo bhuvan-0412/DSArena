@@ -1,4 +1,4 @@
-import { supabase } from "./supabase/client";
+import { createClient } from "./supabase/client";
 
 export interface SyncPayload {
   id: string;
@@ -20,6 +20,11 @@ class SyncService {
       this.loadQueue();
       window.addEventListener("online", () => this.flushQueue());
     }
+  }
+
+  // Lazy getter — only creates the Supabase client when actually needed (in browser)
+  private getSupabase() {
+    return createClient();
   }
 
   private loadQueue() {
@@ -61,6 +66,7 @@ class SyncService {
 
     this.isSyncing = true;
     const remaining: SyncPayload[] = [];
+    const supabase = this.getSupabase();
 
     for (const item of this.queue) {
       try {

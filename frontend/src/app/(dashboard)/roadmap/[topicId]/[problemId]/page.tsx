@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, use } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { ArrowLeft, Play, Sparkles, CheckCircle2, Award, Zap, HelpCircle, Code2, AlertTriangle, MessageSquare, BookOpen, Loader2, Bot } from "lucide-react";

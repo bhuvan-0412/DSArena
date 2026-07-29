@@ -1,5 +1,8 @@
 "use client";
 
+// Prevent static generation — requires live user auth and backend data
+export const dynamic = "force-dynamic";
+
 import React, { useState, useEffect } from "react";
 import { Trophy, Clock, Users, ArrowRight, ShieldCheck, Flame, Play, Sparkles, Filter } from "lucide-react";
 import Link from "next/link";

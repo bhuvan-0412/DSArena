@@ -1,5 +1,8 @@
 "use client";
 
+// Prevent static generation — this page requires live user auth and backend data
+export const dynamic = "force-dynamic";
+
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";

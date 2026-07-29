@@ -1,5 +1,8 @@
 "use client";
 
+// Prevent static generation — requires live user auth and backend data
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { Trophy, Award, Lock, Shield, Flame, Zap, Layers, GitFork, TrendingUp, Moon, Sun, Loader2, Sparkles, FileText, Cpu, ChevronRight, Video, BarChart2, Calendar, Bookmark, BookOpen } from "lucide-react";
