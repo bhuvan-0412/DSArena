@@ -16,9 +16,9 @@ export default function SignInPage() {
       setLoading(true);
       setError(null);
       await signInWithGoogle();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Google sign in error:", err);
-      setError(err.message || "Failed to initiate Google Authentication");
+      setError(err instanceof Error ? err.message : "Failed to initiate Google Authentication");
       setLoading(false);
     }
   };

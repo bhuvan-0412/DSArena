@@ -93,9 +93,9 @@ export function LearningActivityHeatmap() {
         setStats(data.statistics);
         setActivities(data.daily_activities || []);
         setTodayDate(data.today_date || "");
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Heatmap fetch error:", err);
-        setError(err.message || "Could not fetch activity data");
+        setError(err instanceof Error ? err.message : "Could not fetch activity data");
       } finally {
         setLoading(false);
       }

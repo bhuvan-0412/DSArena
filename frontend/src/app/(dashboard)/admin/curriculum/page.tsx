@@ -163,9 +163,9 @@ export default function CurriculumVerificationDashboard() {
           }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Dashboard load error:", err);
-      setError(err.message || "Could not connect to backend server at http://127.0.0.1:8000");
+      setError(err instanceof Error ? err.message : "Could not connect to backend server at http://127.0.0.1:8000");
     } finally {
       setLoading(false);
     }
