@@ -1,22 +1,12 @@
 "use client";
 
 import React from "react";
-import { ClerkProvider } from "@clerk/nextjs";
+import { SupabaseAuthProvider } from "@/components/auth/supabase-provider";
 
-export default function ClerkProviderWrapper({ children }: { children: React.ReactNode }) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_bW9jay1jbGVyay1rZXktZm9yLWRzYXJlbmEtZGV2LmNsa2Vya3MuZGV2JA";
-
+export default function AppAuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider
-      publishableKey={publishableKey}
-      appearance={{
-        variables: {
-          colorPrimary: "#ff4655",
-          colorBackground: "#0a0a0f",
-        },
-      }}
-    >
+    <SupabaseAuthProvider>
       {children}
-    </ClerkProvider>
+    </SupabaseAuthProvider>
   );
 }

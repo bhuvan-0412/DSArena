@@ -1,33 +1,20 @@
 "use client";
 
 import React from "react";
-import { Trophy, CheckCircle2, Clock, Hourglass, BarChart, Sparkles } from "lucide-react";
+import { CheckCircle2, Hourglass, BarChart, Sparkles } from "lucide-react";
 
 interface ProgressCardProps {
   completedCount: number;
   totalCount: number;
   progressPercentage: number;
-  estimatedTimeMins?: number;
-  lessonStatus?: string;
 }
 
 export function ProgressCard({
   completedCount,
   totalCount,
   progressPercentage,
-  estimatedTimeMins = 0,
-  lessonStatus = "AVAILABLE",
 }: ProgressCardProps) {
   const remainingCount = Math.max(0, totalCount - completedCount);
-  const totalMinsLeft = remainingCount * 20 + estimatedTimeMins;
-  
-  const formatTime = (mins: number) => {
-    if (mins <= 0) return "0 mins";
-    if (mins < 60) return `${mins} mins`;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  };
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 space-y-4 shadow-xl">
@@ -79,19 +66,6 @@ export function ProgressCard({
           <div>
             <div className="text-xs font-bold text-white">{remainingCount}</div>
             <div className="text-[10px] text-zinc-400">Remaining Lessons</div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl border border-zinc-800/80 bg-zinc-900/50 flex items-center gap-2.5 col-span-2">
-          <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
-            <Clock className="w-4 h-4" />
-          </div>
-          <div className="flex-1 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-white">{formatTime(totalMinsLeft)}</div>
-              <div className="text-[10px] text-zinc-400">Estimated Time Remaining</div>
-            </div>
-            <Trophy className="w-4 h-4 text-amber-400/80" />
           </div>
         </div>
       </div>

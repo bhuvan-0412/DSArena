@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Trophy, TrendingUp, ShieldCheck, Award, Zap } from "lucide-react";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { BACKEND_URL } from "@/lib/api-config";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
 interface RatingHistoryItem {
   contest_title: string;

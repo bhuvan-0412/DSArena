@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, CheckCircle2, Play, Clock } from "lucide-react";
+import { ChevronRight, CheckCircle2, Play } from "lucide-react";
 
 interface NextNodeInfo {
   id: string;
@@ -26,12 +26,12 @@ export function NextNodeCard({
 }: NextNodeCardProps) {
   if (!isCompleted) {
     return (
-      <div className="glass-card p-6 rounded-2xl border border-card-border/60 opacity-60 text-center space-y-2">
-        <span className="text-xs font-mono uppercase font-bold text-zinc-500 tracking-widest block">
-          NEXT LESSON UNLOCK
+      <div className="glass-card p-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 text-center space-y-2">
+        <span className="text-xs font-mono uppercase font-bold text-cyan-400 tracking-wider block">
+          RECOMMENDED NEXT LESSON
         </span>
-        <p className="text-xs text-muted-foreground">
-          Complete watching the current video and click &quot;Mark as Done&quot; above to unlock the next roadmap node.
+        <p className="text-xs text-slate-400">
+          Mark the current lesson as done when finished, or navigate freely to any other topic in the roadmap.
         </p>
       </div>
     );
@@ -78,10 +78,6 @@ export function NextNodeCard({
 
         <div className="space-y-1 flex-1">
           <h4 className="text-base font-bold text-white leading-tight">{nextNode.title}</h4>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-            <Clock className="w-3 h-3" />
-            <span>EST: {nextNode.estimated_duration || 15} mins</span>
-          </div>
         </div>
 
         <button

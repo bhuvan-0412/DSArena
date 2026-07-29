@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -9,8 +9,11 @@ class DailyActivity(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     date = Column(String, nullable=False) # YYYY-MM-DD format
     problems_solved = Column(Integer, default=0)
+    lessons_completed = Column(Integer, default=0)
+    topics_completed = Column(Integer, default=0)
     xp_earned = Column(Integer, default=0)
     study_duration_seconds = Column(Integer, default=0)
+    streak_active = Column(Boolean, default=True)
 
     # Relationships
     user = relationship("User")

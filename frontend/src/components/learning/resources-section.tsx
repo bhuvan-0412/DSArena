@@ -1,6 +1,6 @@
 "use client";
 
-import { Video, FileText, BookOpen, ExternalLink, Bookmark, BookmarkCheck, User, Clock, Layers } from "lucide-react";
+import { Video, FileText, BookOpen, ExternalLink, Bookmark, BookmarkCheck, User, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 export interface LearningResource {
@@ -67,7 +67,7 @@ export function ResourcesSection({ resources, onToggleBookmarkResource }: Resour
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-muted-foreground px-2.5 py-1 rounded bg-muted border border-card-border">
-          {resources.length} AVAILABLE
+          {resources.length} Resources
         </span>
       </div>
 
@@ -118,11 +118,6 @@ export function ResourcesSection({ resources, onToggleBookmarkResource }: Resour
                   {res.author && (
                     <span className="flex items-center gap-1">
                       <User className="w-3 h-3 text-zinc-500" /> {res.author}
-                    </span>
-                  )}
-                  {res.duration && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-zinc-500" /> {res.duration}
                     </span>
                   )}
                   {res.difficulty && (

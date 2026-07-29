@@ -4,8 +4,8 @@ import React, { useState, useEffect, use } from "react";
 import { Trophy, Clock, ArrowLeft, Play, CheckCircle2, XCircle, Code2, Send, Flame, Shield, Layers } from "lucide-react";
 import Link from "next/link";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { BACKEND_URL } from "@/lib/api-config";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
 interface ContestProblemItem {
   id: number;

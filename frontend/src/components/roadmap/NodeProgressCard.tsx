@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, Play, Clock, CheckCircle2, Zap, Calendar } from "lucide-react";
+import { Lock, Clock, CheckCircle2, Zap, Calendar } from "lucide-react";
 
 export type NodeStatusType = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 
@@ -14,7 +14,6 @@ interface NodeProgressCardProps {
 
 export function NodeProgressCard({
   status,
-  estimatedDuration = 15,
   xpReward = 50,
   startedAt,
   completedAt,
@@ -36,12 +35,7 @@ export function NodeProgressCard({
           </div>
         );
       case "AVAILABLE":
-        return (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info-cyan/10 border border-info-cyan/30 text-info-cyan font-bold text-xs uppercase tracking-wider shadow-sm">
-            <Play className="w-4 h-4 fill-info-cyan" />
-            <span>Available</span>
-          </div>
-        );
+        return null;
       case "LOCKED":
       default:
         return (
@@ -69,24 +63,18 @@ export function NodeProgressCard({
     }
   };
 
+  const badge = getStatusBadge();
+
   return (
     <div className="glass-card p-5 rounded-2xl border border-card-border space-y-4 shadow-lg">
       <div className="flex items-center justify-between gap-4 border-b border-card-border/60 pb-3">
         <span className="text-xs font-mono uppercase font-bold text-muted-foreground tracking-widest">
           Node Progress Status
         </span>
-        {getStatusBadge()}
+        {badge}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-        <div className="space-y-1">
-          <span className="text-muted-foreground block text-[10px]">ESTIMATED TIME</span>
-          <div className="flex items-center gap-1.5 font-bold text-white">
-            <Clock className="w-3.5 h-3.5 text-info-cyan" />
-            <span>{estimatedDuration} Mins</span>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
         <div className="space-y-1">
           <span className="text-muted-foreground block text-[10px]">XP REWARD</span>
           <div className="flex items-center gap-1.5 font-bold text-xp-gold">

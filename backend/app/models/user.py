@@ -11,6 +11,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, nullable=True)
     display_name = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
     
     # Gamification
     xp = Column(Integer, default=0)

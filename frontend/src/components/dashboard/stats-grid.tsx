@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { Flame, Trophy, Award, Zap, TrendingUp } from "lucide-react";
+import { Flame, Zap, TrendingUp, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function StatsGrid() {
@@ -10,7 +10,6 @@ export default function StatsGrid() {
   if (!stats) return null;
 
   const currentLevelXp = stats.xp % 1000;
-  const xpPercentage = (currentLevelXp / 1000) * 100;
 
   const cards = [
     {
@@ -18,16 +17,8 @@ export default function StatsGrid() {
       value: `Level ${stats.level}`,
       desc: `${currentLevelXp} / 1000 XP to next level`,
       icon: Zap,
-      color: "text-xp-gold border-xp-gold/10 bg-yellow-950/5",
-      accent: "from-yellow-500/20 to-transparent",
-    },
-    {
-      title: "Arena Rank",
-      value: stats.rank,
-      desc: "Based on overall progression",
-      icon: Trophy,
-      color: "text-primary border-primary/10 bg-red-950/5",
-      accent: "from-red-500/20 to-transparent",
+      color: "text-amber-400 border-amber-500/10 bg-amber-950/5",
+      accent: "from-amber-500/20 to-transparent",
     },
     {
       title: "Solving Streak",
@@ -42,8 +33,16 @@ export default function StatsGrid() {
       value: `${stats.xp.toLocaleString()} XP`,
       desc: "All-time score across problems & quizzes",
       icon: TrendingUp,
-      color: "text-info-cyan border-info-cyan/10 bg-cyan-950/5",
+      color: "text-cyan-400 border-cyan-500/10 bg-cyan-950/5",
       accent: "from-cyan-500/20 to-transparent",
+    },
+    {
+      title: "Learning Status",
+      value: "Active",
+      desc: "Striver A2Z Roadmap Progress",
+      icon: CheckCircle2,
+      color: "text-emerald-400 border-emerald-500/10 bg-emerald-950/5",
+      accent: "from-emerald-500/20 to-transparent",
     },
   ];
 
@@ -54,17 +53,16 @@ export default function StatsGrid() {
         return (
           <motion.div
             key={card.title}
-            className={`border rounded-2xl p-6 relative overflow-hidden glass-card transition-all duration-300 hover:border-white/20`}
+            className="border border-slate-800 rounded-2xl p-6 relative overflow-hidden bg-slate-900/60 backdrop-blur-md transition-all duration-300 hover:border-slate-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1, duration: 0.5 }}
-            whileHover={{ y: -4 }}
+            transition={{ delay: idx * 0.1, duration: 0.4 }}
+            whileHover={{ y: -3 }}
           >
-            {/* Top gradient glow overlay */}
             <div className={`absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b ${card.accent} opacity-20 pointer-events-none`} />
 
             <div className="flex justify-between items-start mb-4">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
                 {card.title}
               </span>
               <Icon className={`w-5 h-5 ${card.color.split(" ")[0]}`} />
@@ -74,7 +72,7 @@ export default function StatsGrid() {
               <h3 className="text-3xl font-black text-white font-mono tracking-tight mb-1">
                 {card.value}
               </h3>
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-xs text-slate-400 font-medium">
                 {card.desc}
               </p>
             </div>

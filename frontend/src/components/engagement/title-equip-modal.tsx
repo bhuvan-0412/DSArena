@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Award, Check, X, Shield, Sparkles } from "lucide-react";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { BACKEND_URL } from "@/lib/api-config";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
 interface TitleItem {
   id: number;

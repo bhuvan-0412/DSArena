@@ -214,7 +214,7 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
         yt_id = node.youtube_video_id or extract_youtube_video_id(node.youtube_url)
         yt_thumb = node.thumbnail_url or get_youtube_thumbnail_url(yt_id)
         unp = user_node_progress_map.get(node.id)
-        node_status = unp.status if (unp and unp.status) else ("COMPLETED" if (unp and unp.completed) else "LOCKED")
+        node_status = unp.status if (unp and unp.status and unp.status != "LOCKED") else ("COMPLETED" if (unp and unp.completed) else "NOT_STARTED")
 
         node_res = RoadmapNodeResponse(
             id=node.id,
@@ -234,7 +234,7 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
             metadata=node.node_metadata,
             status=node_status,
             is_completed=(node_status == "COMPLETED"),
-            is_locked=(node_status == "LOCKED"),
+            is_locked=False,
             children=[]
         )
         
@@ -303,23 +303,14 @@ def get_roadmap_nodes(clerk_id: Optional[str] = None, db: Session = Depends(get_
     for rn in root_nodes:
         calculate_metrics(rn)
         
-    # Helper to apply locking status recursively (Step -> Section -> Topic)
-    def apply_locks(nodes_list, parent_locked=False):
+    # In Open Learning Model, all nodes are accessible (is_locked = False)
+    def unlock_all_nodes(nodes_list):
         nodes_list.sort(key=lambda x: x.order_index)
-        prev_completed = True
-        for i, node in enumerate(nodes_list):
-            is_locked = parent_locked
-            if i > 0 and not prev_completed:
-                is_locked = True
-                
-            node.is_locked = is_locked
-            
-            # Recurse down children
-            apply_locks(node.children, parent_locked=is_locked)
-            
-            prev_completed = node.is_completed
+        for node in nodes_list:
+            node.is_locked = False
+            unlock_all_nodes(node.children)
 
-    apply_locks(root_nodes, parent_locked=False)
+    unlock_all_nodes(root_nodes)
     
     # Sort top level steps by order index
     root_nodes.sort(key=lambda x: x.order_index)
@@ -730,7 +721,8 @@ def complete_topic_activity(
     if xp_gained > 0:
         from app.core.learning import log_xp, update_activity, update_mission_progress, check_and_unlock_achievements, rollup_node_progress
         log_xp(db, user, xp_gained, f"complete_{activity_type}_{topic_id}")
-        update_activity(db, user.id, xp_gained, 0, 120 if activity_type == "notes" else 300)
+        is_lesson = 1 if activity_type in ["video", "notes"] else 0
+        update_activity(db, user.id, xp_gained, 0, 120 if activity_type == "notes" else 300, lessons_completed=is_lesson)
         
         mission_action = f"read_{topic_id}" if activity_type == "notes" else f"complete_quiz" if activity_type == "quiz" else f"watch_{topic_id}"
         update_mission_progress(db, user.id, mission_action)
@@ -788,7 +780,7 @@ def complete_boss_battle(
     from app.core.learning import log_xp, update_activity, check_and_unlock_achievements, rollup_node_progress
     xp_gained = 500
     log_xp(db, user, xp_gained, f"boss_battle_{topic_id}")
-    update_activity(db, user.id, xp_gained, 0, 600)
+    update_activity(db, user.id, xp_gained, 0, 600, topics_completed=1)
     
     db.commit()
 

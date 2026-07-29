@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Clock, Zap, Target, Bookmark, CheckCircle2, BookmarkCheck } from "lucide-react";
+import { Zap, Bookmark, CheckCircle2, BookmarkCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface OverviewSectionProps {
@@ -9,10 +9,10 @@ interface OverviewSectionProps {
     title: string;
     description: string;
     difficulty: string;
-    estimated_time: number;
+    estimated_time?: number;
     xp_reward: number;
-    prerequisites: string[];
-    learning_objectives: string[];
+    prerequisites?: string[];
+    learning_objectives?: string[];
     is_bookmarked: boolean;
   };
   progressPercentage: number;
@@ -48,9 +48,6 @@ export function OverviewSection({ topic, progressPercentage, onToggleBookmark }:
           <div className="flex flex-wrap items-center gap-2.5">
             <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded border font-mono ${getDifficultyBadge(topic.difficulty)}`}>
               {topic.difficulty} Difficulty
-            </span>
-            <span className="text-[10px] text-info-cyan bg-info-cyan/10 border border-info-cyan/20 px-2.5 py-1 rounded uppercase font-bold tracking-wider font-mono flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {topic.estimated_time} Mins
             </span>
             <span className="text-[10px] text-xp-gold bg-xp-gold/10 border border-xp-gold/20 px-2.5 py-1 rounded uppercase font-bold tracking-wider font-mono flex items-center gap-1">
               <Zap className="w-3 h-3 fill-xp-gold" /> +{topic.xp_reward} XP
@@ -100,31 +97,6 @@ export function OverviewSection({ topic, progressPercentage, onToggleBookmark }:
             className="h-full bg-gradient-to-r from-primary to-success-emerald transition-all duration-500"
             style={{ width: `${progressPercentage}%` }}
           />
-        </div>
-      </div>
-
-      {/* Prerequisites & Objectives */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-        <div className="p-5 rounded-2xl border border-card-border/50 bg-[#030303]/30 space-y-3">
-          <h3 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
-            <Target className="w-4 h-4 text-orange-400" /> Prerequisites
-          </h3>
-          <ul className="space-y-2 text-xs text-muted-foreground list-disc pl-4">
-            {topic.prerequisites.map((req, idx) => (
-              <li key={idx}>{req}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-card-border/50 bg-[#030303]/30 space-y-3">
-          <h3 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" /> Learning Objectives
-          </h3>
-          <ul className="space-y-2 text-xs text-muted-foreground list-disc pl-4">
-            {topic.learning_objectives.map((obj, idx) => (
-              <li key={idx}>{obj}</li>
-            ))}
-          </ul>
         </div>
       </div>
     </motion.div>

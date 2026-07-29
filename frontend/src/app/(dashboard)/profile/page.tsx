@@ -2,14 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { Trophy, Award, Lock, Shield, Flame, Zap, Layers, GitFork, TrendingUp, Moon, Sun, Loader2, Sparkles, ShieldAlert, CheckCircle2, Clock, CheckSquare, Target, BookMarked, FileText, Cpu, Settings2, ExternalLink, ChevronRight, Video, BarChart2, Calendar, Bookmark, BookOpen } from "lucide-react";
+import { Trophy, Award, Lock, Shield, Flame, Zap, Layers, GitFork, TrendingUp, Moon, Sun, Loader2, Sparkles, FileText, Cpu, ChevronRight, Video, BarChart2, Calendar, Bookmark, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { AISettingsModal } from "@/components/ai/ai-settings-modal";
-import { UserPreferencesForm } from "@/components/adaptive/user-preferences-form";
-import { ReadinessGaugeCard } from "@/components/interview/readiness-gauge-card";
-import { CareerGoalsSelector } from "@/components/interview/career-goals-selector";
-import { MilestoneTrackerCard } from "@/components/interview/milestone-tracker-card";
 import { InteractiveStudyCalendar } from "@/components/engagement/interactive-study-calendar";
 import { TitleEquipModal } from "@/components/engagement/title-equip-modal";
 import { RatingChartCard } from "@/components/contest/rating-chart-card";
@@ -66,7 +62,8 @@ interface TimelineData {
   calendar: { date: string; count: number; xp: number; duration: number }[];
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function ProfilePage() {
   const { stats, isLoaded } = useAuthUser();
@@ -203,9 +200,6 @@ export default function ProfilePage() {
               <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-muted text-muted-foreground border border-card-border">
                 Level {stats.level}
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-primary/15 text-primary border border-primary/25">
-                {stats.rank} Rank
-              </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-orange-950/20 text-orange-500 border border-orange-500/20">
                 {stats.current_streak} Day Streak
               </span>
@@ -258,97 +252,36 @@ export default function ProfilePage() {
 
       {/* Analytics Grid */}
       {analytics && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Key metrics list */}
-          <div className="border border-card-border rounded-2xl p-6 glass-card space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
-              <BarChart2 className="w-4 h-4 text-primary" /> Learning Analytics
-            </h3>
-            
-            <div className="space-y-3.5 text-xs">
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Average Solving Time</span>
-                <span className="text-white font-bold font-mono">{analytics.average_solving_time}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Topic Nodes Completed</span>
-                <span className="text-white font-bold font-mono">{analytics.topic_completion}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Average Quiz Score</span>
-                <span className="text-xp-gold font-bold font-mono">{analytics.average_quiz_score}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Quiz Accuracy</span>
-                <span className="text-success-emerald font-bold font-mono">{analytics.quiz_accuracy ?? analytics.average_quiz_score}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Perfect Scores (100%)</span>
-                <span className="text-xp-gold font-bold font-mono">{analytics.perfect_scores_count ?? 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Quizzes Conquered</span>
-                <span className="text-white font-bold font-mono">{analytics.total_quizzes_completed} nodes</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-card-border/50">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Revision Completion</span>
-                <span className="text-info-cyan font-bold font-mono">{analytics.revision_completion_percentage}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest font-mono">Current Focus</span>
-                <span className="text-xp-gold font-bold">{analytics.current_focus}</span>
-              </div>
+        <div className="border border-card-border rounded-2xl p-6 glass-card space-y-4">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
+            <BarChart2 className="w-4 h-4 text-primary" /> Learning Analytics
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs pt-1">
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Topic Nodes Completed</span>
+              <span className="text-white font-bold font-mono">{analytics.topic_completion}</span>
             </div>
-          </div>
-
-          {/* Strengths Card */}
-          <div className="border border-card-border rounded-2xl p-6 bg-[#041e17]/10 border-success-emerald/10 space-y-3 flex flex-col justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-success-emerald uppercase tracking-wider flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4" /> Gladiator Strengths
-              </h3>
-              <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
-                Highest mastery topics based on problem completeness and revision recall scores:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {analytics.strengths.map((str) => (
-                  <span key={str} className="text-[10px] font-bold px-2.5 py-1 rounded bg-success-emerald/10 text-success-emerald border border-success-emerald/20 uppercase font-mono">
-                    {str}
-                  </span>
-                ))}
-              </div>
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Average Quiz Score</span>
+              <span className="text-xp-gold font-bold font-mono">{analytics.average_quiz_score}%</span>
             </div>
-            {analytics.best_topic && analytics.best_topic !== "None" && (
-              <div className="pt-3 border-t border-success-emerald/15 mt-3">
-                <span className="text-[9px] uppercase font-bold tracking-widest text-muted-foreground block mb-0.5">Highest Mastery Node:</span>
-                <span className="text-xs font-bold text-success-emerald uppercase font-mono">{analytics.best_topic}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Weaknesses Card */}
-          <div className="border border-card-border rounded-2xl p-6 bg-red-950/5 border-red-500/10 space-y-3 flex flex-col justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-red-500 uppercase tracking-wider flex items-center gap-2 mb-2">
-                <Shield className="w-4 h-4" /> Focus Areas (Weaknesses)
-              </h3>
-              <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
-                Topics requiring immediate reviews or problems currently left attempted but unsolved:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {analytics.weaknesses.map((weak) => (
-                  <span key={weak} className="text-[10px] font-bold px-2.5 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20 uppercase font-mono">
-                    {weak}
-                  </span>
-                ))}
-              </div>
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Quiz Accuracy</span>
+              <span className="text-success-emerald font-bold font-mono">{analytics.quiz_accuracy ?? analytics.average_quiz_score}%</span>
             </div>
-            {analytics.weakest_topic && analytics.weakest_topic !== "None" && (
-              <div className="pt-3 border-t border-red-500/15 mt-3">
-                <span className="text-[9px] uppercase font-bold tracking-widest text-muted-foreground block mb-0.5">Focus Required Node:</span>
-                <span className="text-xs font-bold text-red-500 uppercase font-mono">{analytics.weakest_topic}</span>
-              </div>
-            )}
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Perfect Scores (100%)</span>
+              <span className="text-xp-gold font-bold font-mono">{analytics.perfect_scores_count ?? 0}</span>
+            </div>
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Quizzes Conquered</span>
+              <span className="text-white font-bold font-mono">{analytics.total_quizzes_completed} nodes</span>
+            </div>
+            <div className="p-3 rounded-xl border border-card-border/50 bg-[#030303]/40 flex justify-between items-center">
+              <span className="text-muted-foreground uppercase font-bold text-[9px] tracking-widest">Revision Completion</span>
+              <span className="text-info-cyan font-bold font-mono">{analytics.revision_completion_percentage}%</span>
+            </div>
           </div>
         </div>
       )}
@@ -511,14 +444,6 @@ export default function ProfilePage() {
 
         {/* Phase 7 Contest Platform Rating & Stats */}
         <RatingChartCard />
-
-        {/* Phase 5 Interview Operating System */}
-        <ReadinessGaugeCard />
-        <CareerGoalsSelector />
-        <MilestoneTrackerCard />
-
-        {/* Adaptive Learning Engine User Preferences */}
-        <UserPreferencesForm />
 
         {/* Phase 6 Engagement: GitHub Style Study Contribution Calendar */}
         <InteractiveStudyCalendar />

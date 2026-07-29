@@ -8,8 +8,6 @@ import Link from "next/link";
 
 import { VideoPlayer } from "@/components/roadmap/VideoPlayer";
 import { LessonHeader } from "@/components/roadmap/LessonHeader";
-import { LearningObjectivesCard } from "@/components/roadmap/LearningObjectivesCard";
-import { PrerequisiteCard, PrerequisiteItem } from "@/components/roadmap/PrerequisiteCard";
 import { ProgressCard } from "@/components/roadmap/ProgressCard";
 import { LessonSidebar, SidebarLessonNode } from "@/components/roadmap/LessonSidebar";
 import { LessonNavigation, NavigationNode } from "@/components/roadmap/LessonNavigation";
@@ -18,9 +16,8 @@ import { CompletionDialog } from "@/components/roadmap/CompletionDialog";
 
 import { LessonTabs, LessonTabType } from "@/components/roadmap/LessonTabs";
 import { NotesPanel } from "@/components/roadmap/NotesPanel";
-import { SummaryCard, TakeawaysData } from "@/components/roadmap/SummaryCard";
-import { TipCard, TipsData } from "@/components/roadmap/TipCard";
 import { ResourceCard, ResourceItem } from "@/components/roadmap/ResourceCard";
+import { RoadmapBreadcrumbs } from "@/components/roadmap/RoadmapBreadcrumbs";
 
 interface NodeData {
   id: string;
@@ -37,14 +34,14 @@ interface NodeData {
   is_locked: boolean;
   status: string;
   prerequisites?: string[];
-  prerequisites_details?: PrerequisiteItem[];
+  prerequisites_details?: unknown[];
   learning_objectives?: {
     what_you_will_learn?: string[];
     why_this_topic_matters?: string | null;
     real_world_applications?: string[];
     interview_questions?: string[];
   } | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   progress?: {
     user_id: number;
     node_id: string;
@@ -57,8 +54,6 @@ interface NodeData {
 
 interface HubData {
   notes?: { id: number; node_id: string; content: string; updated_at?: string | null };
-  takeaways?: TakeawaysData;
-  tips?: TipsData;
   resources?: ResourceItem[];
 }
 
@@ -68,7 +63,8 @@ interface RoadmapProgressStats {
   progressPercentage: number;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function LessonPage({ params }: { params: Promise<{ nodeId: string }> }) {
   const { nodeId } = use(params);
@@ -140,15 +136,15 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
         if (nodesRes.ok) {
           const rawNodes = await nodesRes.json();
           const mappedLessons: SidebarLessonNode[] = (Array.isArray(rawNodes) ? rawNodes : []).map(
-            (item: any) => ({
-              id: item.id,
-              title: item.title,
-              order: item.order || item.order_index || 1,
-              status: item.status || (item.is_completed ? "COMPLETED" : "LOCKED"),
-              is_completed: item.is_completed || item.status === "COMPLETED",
-              is_locked: item.is_locked,
-              parent_id: item.parent_id,
-              parent_title: item.parent_title || item.step_title || "DSA Roadmap",
+            (item: Record<string, unknown>) => ({
+              id: String(item.id || ""),
+              title: String(item.title || ""),
+              order: Number(item.order || item.order_index || 1),
+              status: String(item.status || (item.is_completed ? "COMPLETED" : "NOT_STARTED")),
+              is_completed: Boolean(item.is_completed || item.status === "COMPLETED"),
+              is_locked: false,
+              parent_id: item.parent_id ? String(item.parent_id) : undefined,
+              parent_title: String(item.parent_title || item.step_title || "DSA Roadmap"),
             })
           );
           setAllLessons(mappedLessons);
@@ -162,9 +158,10 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             progressPercentage: progData.progress_percentage || 0,
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unable to fetch lesson data.";
         console.error("Error loading lesson page:", err);
-        setError(err.message || "Unable to fetch lesson data.");
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -281,26 +278,14 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
   const isCompleted = node.status === "COMPLETED" || Boolean(node.progress?.completed);
 
-  // Tab 1 Learn Content Node
+  // Tab 1 Learn Content Node (Video Player only)
   const learnTabContent = (
-    <div className="space-y-6">
-      {/* Video Player */}
-      <VideoPlayer
-        youtubeUrl={node.youtube_url}
-        videoId={node.youtube_video_id}
-        thumbnailUrl={node.thumbnail_url}
-        title={node.title}
-      />
-
-      {/* Learning Objectives */}
-      <LearningObjectivesCard
-        objectives={node.learning_objectives}
-        lessonTitle={node.title}
-      />
-
-      {/* Prerequisites */}
-      <PrerequisiteCard prerequisites={node.prerequisites_details} />
-    </div>
+    <VideoPlayer
+      youtubeUrl={node.youtube_url}
+      videoId={node.youtube_video_id}
+      thumbnailUrl={node.thumbnail_url}
+      title={node.title}
+    />
   );
 
   // Tab 2 Notes Content Node
@@ -313,28 +298,24 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
     />
   );
 
-  // Tab 3 Key Takeaways Content Node
-  const takeawaysTabContent = (
-    <SummaryCard takeaways={hubData?.takeaways} lessonTitle={node.title} />
-  );
-
-  // Tab 4 Tips Content Node
-  const tipsTabContent = (
-    <TipCard tips={hubData?.tips} lessonTitle={node.title} />
-  );
-
-  // Tab 5 Resources Content Node
+  // Tab 3 Resources Content Node
   const resourcesTabContent = (
     <ResourceCard resources={hubData?.resources} />
   );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 pb-24">
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between">
-        <Link href="/roadmap">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
-            <ArrowLeft className="w-4 h-4 text-zinc-400" />
+      {/* Top Navigation Bar & Breadcrumbs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-4">
+        <RoadmapBreadcrumbs
+          stepTitle={typeof node.metadata?.step_title === "string" ? node.metadata.step_title : "Striver Roadmap"}
+          sectionTitle={node.parent_title}
+          lessonTitle={node.title}
+        />
+
+        <Link href="/roadmap" className="shrink-0">
+          <button className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
+            <ArrowLeft className="w-3.5 h-3.5 text-zinc-400" />
             <span>Back to Roadmap</span>
           </button>
         </Link>
@@ -352,15 +333,13 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
 
       {/* Two Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* LEFT COLUMN: 5-Tab Knowledge Hub (Learn, Notes, Takeaways, Tips, Resources) */}
+        {/* LEFT COLUMN: 3-Tab Knowledge Hub (Learn, Notes, Resources) */}
         <div className="lg:col-span-2 space-y-6">
           <LessonTabs
             activeTab={activeTab}
             onTabChange={(tab) => setActiveTab(tab)}
             learnContent={learnTabContent}
             notesContent={notesTabContent}
-            takeawaysContent={takeawaysTabContent}
-            tipsContent={tipsTabContent}
             resourcesContent={resourcesTabContent}
           />
         </div>
@@ -371,7 +350,7 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
           <CompletionBanner
             isCompleted={isCompleted}
             completing={completing}
-            xpReward={node.metadata?.xp_reward || 100}
+            xpReward={typeof node.metadata?.xp_reward === "number" ? node.metadata.xp_reward : 100}
             onMarkAsDone={handleMarkAsDone}
             onContinueLearning={handleGoToNextNode}
             hasNextNode={Boolean(nextNode)}
@@ -382,8 +361,6 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
             completedCount={progressStats.completedVideos}
             totalCount={progressStats.totalVideos}
             progressPercentage={progressStats.progressPercentage}
-            estimatedTimeMins={node.estimated_duration}
-            lessonStatus={node.status}
           />
 
           {/* Quick Notes Widget */}

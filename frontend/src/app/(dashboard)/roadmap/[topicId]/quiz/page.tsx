@@ -103,7 +103,8 @@ interface QuizSubmissionResult {
   }>;
 }
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1";
+import { BACKEND_URL } from "@/lib/api-config";
+
 
 export default function StandaloneQuizPage({ params }: { params: Promise<{ topicId: string }> }) {
   const { topicId } = use(params);

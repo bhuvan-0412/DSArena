@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Clock, BarChart2, CheckCircle2, Sparkles, BookOpen } from "lucide-react";
+import { BarChart2, CheckCircle2, Sparkles, BookOpen } from "lucide-react";
 
 interface LessonHeaderProps {
   lessonNumber: number;
   title: string;
   parentTitle?: string | null;
-  estimatedDuration: number;
+  estimatedDuration?: number;
   difficulty?: string | null;
   status: string;
 }
@@ -16,7 +16,6 @@ export function LessonHeader({
   lessonNumber,
   title,
   parentTitle,
-  estimatedDuration,
   difficulty = "Easy",
   status,
 }: LessonHeaderProps) {
@@ -66,11 +65,6 @@ export function LessonHeader({
 
       {/* Info Stats Bar */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400 pt-1">
-        <div className="flex items-center gap-1.5 bg-zinc-900/80 px-2.5 py-1 rounded-lg border border-zinc-800">
-          <Clock className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{estimatedDuration} mins</span>
-        </div>
-
         <div
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${getDifficultyColor(
             difficulty
@@ -80,14 +74,16 @@ export function LessonHeader({
           <span>{difficulty || "Easy"}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-zinc-900/80 px-2.5 py-1 rounded-lg border border-zinc-800">
-          <CheckCircle2
-            className={`w-3.5 h-3.5 ${
-              isCompleted ? "text-emerald-400" : "text-zinc-500"
-            }`}
-          />
-          <span className="capitalize">{status.toLowerCase().replace("_", " ")}</span>
-        </div>
+        {status && status !== "AVAILABLE" && (
+          <div className="flex items-center gap-1.5 bg-zinc-900/80 px-2.5 py-1 rounded-lg border border-zinc-800">
+            <CheckCircle2
+              className={`w-3.5 h-3.5 ${
+                isCompleted ? "text-emerald-400" : "text-zinc-500"
+              }`}
+            />
+            <span className="capitalize">{status.toLowerCase().replace("_", " ")}</span>
+          </div>
+        )}
       </div>
     </div>
   );
