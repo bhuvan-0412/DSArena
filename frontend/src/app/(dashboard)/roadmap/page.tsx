@@ -272,8 +272,7 @@ export default function RoadmapPage() {
               // Status Filter Check
               if (activeFilter === "COMPLETED" && !(status === "COMPLETED" || lesson.is_completed)) return false;
               if (activeFilter === "IN_PROGRESS" && status !== "IN_PROGRESS") return false;
-              if (activeFilter === "UNLOCKED" && (lesson.is_locked || status === "LOCKED")) return false;
-              if (activeFilter === "LOCKED" && !lesson.is_locked && status !== "LOCKED") return false;
+              if (activeFilter === "NOT_STARTED" && (status === "COMPLETED" || status === "IN_PROGRESS" || lesson.is_completed)) return false;
 
               // Search Match Check
               if (!q) return true;

@@ -38,9 +38,8 @@ export function RoadmapHeader({
   const filterOptions = [
     { key: "ALL", label: "All Lessons" },
     { key: "IN_PROGRESS", label: "In Progress" },
-    { key: "UNLOCKED", label: "Unlocked" },
     { key: "COMPLETED", label: "Completed" },
-    { key: "LOCKED", label: "Locked" },
+    { key: "NOT_STARTED", label: "Not Started" },
   ];
 
   return (

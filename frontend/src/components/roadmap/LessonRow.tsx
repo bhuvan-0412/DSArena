@@ -2,9 +2,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Play, Lock, Video, Sparkles } from "lucide-react";
+import { CheckCircle2, Play, Video, Sparkles, Star, Clock } from "lucide-react";
 
-export type LessonState = "COMPLETED" | "CURRENT" | "UNLOCKED" | "LOCKED" | "FUTURE";
+export type LessonState = "COMPLETED" | "CURRENT" | "IN_PROGRESS" | "NOT_STARTED";
 
 export interface RoadmapNode {
   id: string;
@@ -55,20 +55,18 @@ export function LessonRow({
   onSelect,
   onNavigate,
 }: LessonRowProps) {
-  // Determine exact visual state
+  // Determine visual state for Open Learning Model
   const rawStatus = (lesson.status || "").toUpperCase();
-  let state: LessonState = "UNLOCKED";
+  let state: LessonState = "NOT_STARTED";
 
   if (lesson.is_completed || rawStatus === "COMPLETED") {
     state = "COMPLETED";
-  } else if (isCurrent || rawStatus === "IN_PROGRESS" || rawStatus === "CURRENT") {
+  } else if (isCurrent || rawStatus === "CURRENT") {
     state = "CURRENT";
-  } else if (lesson.is_locked || rawStatus === "LOCKED") {
-    state = "LOCKED";
-  } else if (rawStatus === "FUTURE") {
-    state = "FUTURE";
+  } else if (rawStatus === "IN_PROGRESS") {
+    state = "IN_PROGRESS";
   } else {
-    state = "UNLOCKED";
+    state = "NOT_STARTED";
   }
 
   // Highlight search term
@@ -107,7 +105,7 @@ export function LessonRow({
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect(lesson, stepTitle, sectionTitle);
-    if (onNavigate && state !== "LOCKED") {
+    if (onNavigate) {
       onNavigate(lesson);
     }
   };
@@ -116,7 +114,7 @@ export function LessonRow({
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSelect(lesson, stepTitle, sectionTitle);
-      if (onNavigate && state !== "LOCKED") {
+      if (onNavigate) {
         onNavigate(lesson);
       }
     }
@@ -128,9 +126,8 @@ export function LessonRow({
       whileTap={{ scale: 0.997 }}
       transition={{ duration: 0.15 }}
       role="button"
-      tabIndex={state === "LOCKED" ? -1 : 0}
+      tabIndex={0}
       aria-selected={isSelected}
-      aria-disabled={state === "LOCKED"}
       aria-label={`Lesson: ${lesson.title}, Status: ${state}`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -141,8 +138,8 @@ export function LessonRow({
           ? "bg-slate-900/60 hover:bg-slate-800/80 border-slate-800 hover:border-emerald-500/30"
           : state === "CURRENT"
           ? "bg-cyan-950/30 hover:bg-cyan-900/40 border-cyan-500/40 shadow-sm shadow-cyan-500/5 ring-1 ring-cyan-500/20"
-          : state === "LOCKED"
-          ? "bg-slate-950/40 border-slate-900 text-slate-600 cursor-not-allowed opacity-75"
+          : state === "IN_PROGRESS"
+          ? "bg-amber-950/20 hover:bg-amber-900/30 border-amber-500/30"
           : "bg-slate-900/80 hover:bg-slate-800/90 border-slate-800/90 hover:border-slate-700 text-slate-200"
       }`}
     >
@@ -159,25 +156,19 @@ export function LessonRow({
           {state === "CURRENT" && (
             <div className="relative w-7 h-7 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-300">
               <span className="absolute inset-0 rounded-full bg-cyan-400/20 animate-ping" />
-              <Play className="w-3.5 h-3.5 fill-cyan-400 relative z-10 ml-0.5" />
+              <Star className="w-3.5 h-3.5 fill-cyan-400 text-cyan-300 relative z-10" />
             </div>
           )}
 
-          {state === "UNLOCKED" && (
+          {state === "IN_PROGRESS" && (
+            <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
+          )}
+
+          {state === "NOT_STARTED" && (
             <div className="w-7 h-7 rounded-full bg-slate-800 group-hover:bg-cyan-500/20 border border-slate-700 group-hover:border-cyan-500/40 flex items-center justify-center text-slate-400 group-hover:text-cyan-300 transition-colors">
               <Play className="w-3 h-3 ml-0.5 fill-current" />
-            </div>
-          )}
-
-          {state === "LOCKED" && (
-            <div className="w-7 h-7 rounded-full bg-slate-950 border border-slate-900 flex items-center justify-center text-slate-600">
-              <Lock className="w-3 h-3" />
-            </div>
-          )}
-
-          {state === "FUTURE" && (
-            <div className="w-7 h-7 rounded-full bg-slate-950 border border-dashed border-slate-800 flex items-center justify-center text-slate-600">
-              <Sparkles className="w-3 h-3" />
             </div>
           )}
         </div>
@@ -194,8 +185,8 @@ export function LessonRow({
                   ? "text-slate-300 group-hover:text-white"
                   : state === "CURRENT"
                   ? "text-cyan-200 font-bold"
-                  : state === "LOCKED"
-                  ? "text-slate-500"
+                  : state === "IN_PROGRESS"
+                  ? "text-amber-200 font-semibold"
                   : "text-slate-200 group-hover:text-white"
               }`}
             >
@@ -237,8 +228,13 @@ export function LessonRow({
           </span>
         )}
         {state === "CURRENT" && (
-          <span className="hidden md:inline-flex text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded animate-pulse">
-            Current
+          <span className="hidden md:inline-flex text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded">
+            Recommended Next
+          </span>
+        )}
+        {state === "IN_PROGRESS" && (
+          <span className="hidden md:inline-flex text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+            In Progress
           </span>
         )}
       </div>

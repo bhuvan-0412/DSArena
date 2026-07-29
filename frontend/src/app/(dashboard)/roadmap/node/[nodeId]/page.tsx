@@ -139,9 +139,9 @@ export default function LessonPage({ params }: { params: Promise<{ nodeId: strin
               id: String(item.id || ""),
               title: String(item.title || ""),
               order: Number(item.order || item.order_index || 1),
-              status: String(item.status || (item.is_completed ? "COMPLETED" : "LOCKED")),
+              status: String(item.status || (item.is_completed ? "COMPLETED" : "NOT_STARTED")),
               is_completed: Boolean(item.is_completed || item.status === "COMPLETED"),
-              is_locked: Boolean(item.is_locked),
+              is_locked: false,
               parent_id: item.parent_id ? String(item.parent_id) : undefined,
               parent_title: String(item.parent_title || item.step_title || "DSA Roadmap"),
             })
