@@ -1,0 +1,34 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+
+  "include": [
+    "app",
+    "alembic",
+    "seed.py",
+    "audit_curriculum.py",
+    "build_full_striver_tree.py",
+    "fix_audit_issues.py",
+    "inspect_excel_full.py",
+    "migrate_activity_columns.py",
+    "sync_all_striver_steps.py",
+    "update_striver_catalog.py",
+    "validate_videos_and_api.py"
+  ],
+
+  "exclude": [
+    ".venv",
+    "__pycache__",
+    "**/__pycache__"
+  ],
+
+  "typeCheckingMode": "basic",
+
+  "reportMissingImports": true,
+  "reportMissingModuleSource": false,
+  "reportOptionalMemberAccess": false,
+  "useLibraryCodeForTypes": true
+}
